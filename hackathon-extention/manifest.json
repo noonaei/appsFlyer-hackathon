@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "MV3 Minimal Scaffold",
+  "version": "0.1.0",
+  "description": "Minimal MV3 extension with service worker, storage wrapper, and options page",
+
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+
+  "options_page": "options.html",
+
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
+
+  "host_permissions": [
+    "*://*.youtube.com/*",
+    "*://*.instagram.com/*",
+    "*://*.tiktok.com/*",
+    "*://*.reddit.com/*"
+  ],
+
+  "action": {
+    "default_title": "MV3 Scaffold"
+  },
+
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.youtube.com/*",
+        "*://*.instagram.com/*/*",
+        "*://*.tiktok.com/*",
+        "*://*.reddit.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ]
+}
