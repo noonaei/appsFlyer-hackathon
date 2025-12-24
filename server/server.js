@@ -5,6 +5,8 @@ const mongoose = require('mongoose')
 const signalRoutes = require('./routes/signalRoutes')
 const parentRoutes = require('./routes/parentRoutes')
 const deviceRoutes = require('./routes/deviceRoutes')
+const aiRouter = require('./routes/ai') //ai side
+
 
 const app = express()
 //בשביל לאפשר קריאות מאפליקציות חיצוניות
@@ -23,6 +25,7 @@ app.use((req, res, next) => {
 app.use('/api/signals', signalRoutes)
 app.use('/api/parents', parentRoutes)
 app.use('/api/devices', deviceRoutes)
+app.use('/api/ai', aiRouter)
 
 
 // connect to db
