@@ -1,29 +1,40 @@
-import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import rubberDuckRoutes from './routes/rubberDucks.js'; // Import the routes
+require('dotenv').config()
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const express = require('express')
+const mongoose = require('mongoose')
+const signalRoutes = require('./routes/signalRoutes')
+const parentRoutes = require('./routes/parentRoutes')
+const deviceRoutes = require('./routes/deviceRoutes')
 
-dotenv.config();
+const app = express()
+//בשביל לאפשר קריאות מאפליקציות חיצוניות
+const cors = require('cors');
+app.use(cors());
 
-const app = express();
+// middlewares
+app.use(express.json())
 
-app.use(express.json());
-app.use('/images', express.static(path.join(__dirname, 'images'))); // Serve static images
+app.use((req, res, next) => {
+  console.log(req.path, req.method)
+  next()
+})
 
-app.use(cors({
-  origin: process.env.CLIENT_URL
-}));
+// routes
+app.use('/api/signals', signalRoutes)
+app.use('/api/parents', parentRoutes)
+app.use('/api/devices', deviceRoutes)
 
-// Use the routes file for all `/ducks` routes
-app.use('/ducks', rubberDuckRoutes);
 
-// Start server
-const PORT = process.env.PORT;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+// connect to db
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => {
+        console.log('connected to database!!!')
+        // listen to port
+        app.listen(process.env.PORT, () => {
+            console.log('Server is running on port',process.env.PORT)
+        })
+    })
+    .catch((err) => {
+        console.log(err)
+    })
+

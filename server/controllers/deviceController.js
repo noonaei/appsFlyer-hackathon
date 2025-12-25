@@ -1,7 +1,8 @@
-const crypto = require('crypto');
-const Device = require('../models/deviceModel')
+const crypto = require('crypto')
 const mongoose = require('mongoose')
+const Device = require('../models/Device')
 const Parent = require('../models/Parent')
+const EventSignal = require('../models/EventSignal')
 
 function generateDeviceToken() {
     return crypto.randomBytes(6).toString('hex').toUpperCase();
@@ -20,7 +21,7 @@ const createDevice = async (req, res) => {
         }
        
         const newDevice = await Device.create({name, parentId,deviceToken})
-        res.status(201).json({ name: newDevice.name, deviceToken: newDevice.deviceToken, id: newDevice._id })
+        res.status(201).json({ name: newDevice.name, deviceToken: newDevice.deviceToken, deviceId: newDevice._id })
 
       } catch (error) {
         if (error.code === 11000) {
@@ -41,7 +42,7 @@ const deleteDevice = async (req, res) => {
             return res.status(404).json({ error: 'No such device' })
         }
 
-        const parent = await Parent.findById(device.parent)
+        const parent = await Parent.findById(device.parentId)
         if (parent) {
             parent.devices.pull(deviceId)
             await parent.save()
