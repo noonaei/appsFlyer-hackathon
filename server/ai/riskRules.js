@@ -1,7 +1,7 @@
 
 //RULES to alert to parents based on keywords including slang
-//can be exported
-export const RULES = [
+//can be exported (module.exports at the bottom) for use in summarize.js
+const RULES = [
     {
         id: "self_harm",
         severity: "high",
@@ -105,7 +105,7 @@ function includesAny(text, keywords) {
   return keywords.some((k) => t.includes(normalize(k)));
 }
 
-export function scoreRisks({ topTopics = [], topCreators = [] }) {
+function scoreRisks({ topTopics = [], topCreators = [] }) {
     //merging 2 arrays into 1
   const candidates = [
     //item: if label exists use it, else topic, else "" aka null 
@@ -157,3 +157,5 @@ export function scoreRisks({ topTopics = [], topCreators = [] }) {
     return true;
   });
 }
+
+module.exports = {RULES, scoreRisks};

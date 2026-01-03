@@ -1,7 +1,7 @@
 
 
 
-export function explainTopicHe(topicRaw) {
+function explainTopicHe(topicRaw) {
   const topic = (topicRaw || "").toLowerCase();
 
   if (topic.includes("minecraft") || topic.includes("#minecraft")) {
@@ -26,7 +26,7 @@ export function explainTopicHe(topicRaw) {
 
 
 
-export function explainAlertHe(category, severity) {
+function explainAlertHe(category, severity) {
   //messages according to category
   if (category === "self_harm") {
     return "ייתכן שזה קשור למצוקה או פגיעה עצמית. חשוב לבדוק הקשר ולא להסיק מסקנות רק מהמונח.";
@@ -54,7 +54,7 @@ export function explainAlertHe(category, severity) {
 }
 
 
-export function suggestedActionHe(severity) {
+function suggestedActionHe(severity) {
   if (severity === "high") {
     return "שיחה רגועה ושואלת, ובדיקה משותפת של התוכן/המקור. אם יש חשש ממשי — פנייה לגורם מקצועי.";
   }
@@ -63,3 +63,5 @@ export function suggestedActionHe(severity) {
   }
   return "לשאול בסקרנות על הנושא ולוודא התאמה לגיל.";
 }
+
+module.exports ={explainTopicHe, explainAlertHe, suggestedActionHe};
