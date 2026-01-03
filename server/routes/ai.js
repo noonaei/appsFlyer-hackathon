@@ -34,15 +34,16 @@ router.post("/summary", async (req, res) => {
       });
     }
 
-    const input = parsedIn.data;
+    //changed to fit new schema
+    const eventDocs = Array.isArray(parsedIn.data) ? parsedIn.data : [parsedIn.data];
 
     //min log
     console.log("HIT /api/ai/summary", {
-      ageGroup: input.ageGroup,
-      location: input.location,
-      topicsCount: input.topTopics.length,
-      creatorsCount: (input.topCreators && input.topCreators.length) || 0,
-    });
+  deviceId: eventDocs[0]?.deviceId,
+  docs: eventDocs.length,
+  totalSignals: eventDocs.reduce((sum, d) => sum + (d.signals?.length || 0), 0),
+});
+
 
     //3)generating summary
     const result = await buildSummary(input);
