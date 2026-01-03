@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      width: 260px;
+      padding: 12px;
+    }
+    input {
+      width: 100%;
+      padding: 6px;
+      margin: 8px 0;
+    }
+    button {
+      width: 100%;
+      padding: 8px;
+      cursor: pointer;
+    }
+    .status {
+      font-size: 12px;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+  <h3>Device Setup</h3>
+  <p>Paste the device token from the parent app:</p>
+
+  <input id="tokenInput" placeholder="Device token…" />
+  <button id="saveBtn">Save</button>
+
+  <div id="status" class="status"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

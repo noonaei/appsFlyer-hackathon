@@ -31,3 +31,9 @@ export const storage = {
     });
   }
 };
+
+export async function getDeviceToken() {
+  const { deviceToken } = await chrome.storage.local.get('deviceToken');
+  return deviceToken || null;
+}
+
