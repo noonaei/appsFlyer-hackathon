@@ -1,5 +1,7 @@
 const { scoreRisks } = require("./riskRules");
 const { explainTopicHe, explainAlertHe, suggestedActionHe } = require("./hebrewTemplates");
+const { AIOutputSchema } = require("./schema");
+const { generateSummaryLLM } = require("./llm");
 
 //func to convert backend schema into arrays so ai side works
  function normalizeFromEventDocs(eventDocs) {
@@ -31,28 +33,15 @@ const { explainTopicHe, explainAlertHe, suggestedActionHe } = require("./hebrewT
   return { topTopics, topCreators };
 }
 
-//updated inout to match new backend schema
-async function buildSummary({ eventDocs, ageGroup = "unknown", location = "unknown" }) {
-  const { topTopics, topCreators } = normalizeFromEventDocs(Array.isArray(eventDocs) ? eventDocs : []);
-
-  // 1)risk scoring
-  const rawAlerts = scoreRisks({ topTopics, topCreators });
-
-  // 2)enrich alerts into final contract fields
-  const alerts = rawAlerts.map((a) => ({
-    item: a.item,
-    severity: a.severity,
-    explanationHe: explainAlertHe(a.category, a.severity),
-    suggestedActionHe: suggestedActionHe(a.severity),
-  }));
-
+//for testing: deterministic output without LLM
+function buildDeterministicOutput({ topTopics, topCreators, alerts, ageGroup, location }) {
   return {
     shortSummaryHe: `סיכום: עיקר הפעילות סביב ${topTopics[0]?.label ?? "תכנים כלליים"}.`,
     topTopicsHe: topTopics.slice(0, 5).map((t) => ({
       topic: t.label ?? "unknown",
       meaningHe: explainTopicHe(t.label ?? "unknown"),
       platforms: t.platform ? [t.platform] : [],
-      seconds: t.seconds ?? undefined, //backend doesn’t provide duration- stays undefined
+      seconds: t.seconds ?? undefined,
     })),
     topCreatorsHe: topCreators.slice(0, 5).map((c) => ({
       name: c.name ?? "unknown",
@@ -66,6 +55,59 @@ async function buildSummary({ eventDocs, ageGroup = "unknown", location = "unkno
       location,
     },
   };
+}
+
+
+
+//updated inout to match new backend schema
+async function buildSummary({ eventDocs, ageGroup = "unknown", location = "unknown" }) {
+  const { topTopics, topCreators } = normalizeFromEventDocs(Array.isArray(eventDocs) ? eventDocs : []);
+
+  //risk scoring
+  const rawAlerts = scoreRisks({ topTopics, topCreators });
+
+  //enrich alerts into final contract fields
+  const alerts = rawAlerts.map((a) => ({
+    item: a.item,
+    severity: a.severity,
+    explanationHe: explainAlertHe(a.category, a.severity),
+    suggestedActionHe: suggestedActionHe(a.severity),
+  }));
+
+  //facts for LLM
+  const facts = {
+    ageGroup,
+    location,
+    topTopics: topTopics.slice(0, 8),
+    topCreators: topCreators.slice(0, 8),
+    alerts,
+  };
+
+  //call LLM to generate full summary
+  const outputSchemaHint = {
+    shortSummaryHe: "...",
+    interestsHe: { bullets: ["..."], whyItMatters: "...", timeContext: "..." },
+    topTopicsHe: [{ topic: "...", meaningHe: "...", platforms: ["youtube"] }],
+    topCreatorsHe: [{ name: "...", platform: "youtube", whyHe: "..." }],
+    alerts: [{ item: "...", severity: "low", explanationHe: "...", suggestedActionHe: "..." }],
+    meta: { generatedAt: 0, ageGroup: "...", location: "..." },
+  };
+
+  const limJson = await generateSummaryLLM({ facts, outputSchemaHint });
+
+  //use LLM output if valid
+  if (llmJson) {
+    const parsed = AIOutputSchema.safeParse(llmJson);
+    if (parsed.success) {
+      // enforce meta we control (prevents weird outputs)
+      parsed.data.meta.generatedAt = Date.now();
+      parsed.data.meta.ageGroup = ageGroup;
+      parsed.data.meta.location = location;
+      return parsed.data;
+    }
+  }
+  //fallback to deterministic
+  return buildDeterministicOutput({ topTopics, topCreators, alerts, ageGroup, location });
 }
 
 module.exports = { buildSummary };
