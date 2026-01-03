@@ -2,11 +2,23 @@ const express = require('express')
 const router = express.Router()
 const { 
     saveSignals,
-    getSignalsByDevice
+    deleteSignals,
+    getSignalsToday,
+    getSignalsLast5Days
 } = require('../controllers/signalController')
 
-router.get('/:deviceId', getSignalsByDevice)
-router.post('/add', saveSignals)
+const requireAuth = require('../middleware/requireAuth')
+const deviceAuth = require('../middleware/deviceAuth')
+
+router.post('/add',deviceAuth, saveSignals)
+
+// Require auth for all signal routes
+router.use(requireAuth)
+
+router.get('/5days/:deviceId', getSignalsLast5Days)
+router.get('/today/:deviceId', getSignalsToday)
+router.delete('/delete/:deviceId', deleteSignals)
+
 
 
 module.exports = router
