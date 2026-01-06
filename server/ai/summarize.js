@@ -10,7 +10,7 @@ const { generateSummaryLLM } = require("./llm");
 
   //changed to match new aggregated signal schema
   for (const item of history) {
-    const platform = doc.platform || "unknown";
+    const platform = item.platform || "unknown";
     const label = item.label || "unknown";
     const weight = Number.isFinite(item.occurrenceCount) ? item.occurrenceCount : 1;
 
@@ -97,6 +97,7 @@ async function buildSummary({ history, ageGroup = "unknown", location = "unknown
     meta: { generatedAt: 0, ageGroup: "...", location: "..." },
   };
 
+  console.log("[AI] attempting LLM summary...");
   const llmJson  = await generateSummaryLLM({ facts, outputSchemaHint });
 
   //use LLM output if valid

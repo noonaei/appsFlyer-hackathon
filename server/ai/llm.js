@@ -23,11 +23,13 @@ async function generateSummaryLLM({ facts, outputSchemaHint }) {
   const client = getClient();
   if (!client) return null; // allow fallback
 
+  console.log("[AI] LLM enabled:", !!client);
+
   const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
   //system instructions + user prompt
   const system = [
-    "You write concise, parent-friendly Hebrew summaries about a child's online activity.",
+    "You write concise, detailed, parent-friendly Hebrew summaries about a child's online activity.",
     "Return ONLY valid JSON (no markdown, no extra text).",
     "Do not invent topics/creators/platforms not present in the facts.",
     "Avoid full URLs; use domains only if needed.",

@@ -38,8 +38,8 @@ router.post("/summary", async (req, res) => {
     const body = parsedIn.data;
     const history = Array.isArray(body) ? body : body.history || [];
     //if provided 
-    const ageGroup = body.ageGroup || "unknown";
-    const location = body.location || "unknown";
+    const ageGroup = (!Array.isArray(body) && body.ageGroup) ? body.ageGroup : "unknown";
+    const location = (!Array.isArray(body) && body.location) ? body.location : "unknown";
 
     //min log
     console.log("HIT /api/ai/summary", {
@@ -50,10 +50,30 @@ router.post("/summary", async (req, res) => {
 
 
     //3)generating summary
-    const result = await buildSummary({eventDocs});
-    
+    const result = await buildSummary({ history, ageGroup, location });
+
     //4)validating output JSON against schema
     const parsedOut = AIOutputSchema.safeParse(result);
+    //printing JSON in console for testing
+    const out = parsedOut.data;
+
+    console.log("[AI] shortSummaryHe:", out.shortSummaryHe);
+    console.log("[AI] interestsHe.whyItMatters:", out.interestsHe?.whyItMatters);
+
+    console.log("[AI] topTopicsHe:");
+    out.topTopicsHe?.forEach((t, i) => {
+      console.log(`  ${i + 1}. ${t.topic} — ${t.meaningHe}`);
+    });
+
+    console.log("[AI] alerts:");
+    out.alerts?.forEach((a, i) => {
+      console.log(`  ${i + 1}. [${a.severity}] ${a.item}`);
+      console.log(`     ${a.explanationHe}`);
+      console.log(`     ${a.suggestedActionHe}`);
+    });
+
+    //end of test printing
+
     if (!parsedOut.success) {
       console.error("AI output schema mismatch:", parsedOut.error.issues);
       return res.status(500).json({ error: "AI output schema mismatch" });
