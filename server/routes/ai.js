@@ -34,20 +34,24 @@ router.post("/summary", async (req, res) => {
       });
     }
 
-    //changed to fit new schema
-    const eventDocs = Array.isArray(parsedIn.data) ? parsedIn.data : [parsedIn.data];
+    //changed to fit new schema    
+    const body = parsedIn.data;
+    const history = Array.isArray(body) ? body : body.history || [];
+    //if provided 
+    const ageGroup = body.ageGroup || "unknown";
+    const location = body.location || "unknown";
 
     //min log
     console.log("HIT /api/ai/summary", {
-  deviceId: eventDocs[0]?.deviceId,
-  docs: eventDocs.length,
-  totalSignals: eventDocs.reduce((sum, d) => sum + (d.signals?.length || 0), 0),
-});
+      items:history.length,
+      ageGroup,
+      location,
+    });
 
 
     //3)generating summary
-    const result = await buildSummary(input);
-
+    const result = await buildSummary({eventDocs});
+    
     //4)validating output JSON against schema
     const parsedOut = AIOutputSchema.safeParse(result);
     if (!parsedOut.success) {

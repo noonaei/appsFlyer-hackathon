@@ -6,7 +6,7 @@ const { z } = require("zod");
 // optional - can be empty
 // array - should be an array with its elements matching the structure set for it 
 
-//check later if time is removed or not 
+//check later if time is removed or not q
 
 
 //input validation - what backend sends into buildSummary (edited to match backend schema)
@@ -26,24 +26,23 @@ const SignalKindEnum = z.enum([
   "url_visit",
 ]);
 
-const EventSignalItemSchema = z.object({
-  kind: SignalKindEnum,
+//redited to match backend schema
+const AggregatedSignalSchema = z.object({
   label: z.string().min(1),
-  url: z.string().optional(),
-  creator: z.string().optional(),
-  timestamp: z.coerce.date().optional(),
-});
-
-const EventSignalDocSchema = z.object({
-  deviceId: z.string().min(1),
   platform: PlatformEnum,
-  signals: z.array(EventSignalItemSchema).min(1),
+  kind: SignalKindEnum.optional(),
+  creators: z.array(z.string().min(1)).optional(),
+  occurrenceCount: z.number().int().nonnegative().optional(),
 });
 
-//allow posting one doc or an array of docs
+//input can be a single object with history array, or an array of such objects
 const AIInputSchema = z.union([
-  EventSignalDocSchema,
-  z.array(EventSignalDocSchema).min(1),
+  z.object({
+    history: z.array(AggregatedSignalSchema).min(1),
+    ageGroup: z.string().min(1).optional(),
+    location: z.string().min(1).optional(),
+  }),
+  z.array(AggregatedSignalSchema).min(1),
 ]);
 
 

@@ -4,26 +4,30 @@ const { AIOutputSchema } = require("./schema");
 const { generateSummaryLLM } = require("./llm");
 
 //func to convert backend schema into arrays so ai side works
- function normalizeFromEventDocs(eventDocs) {
+ function normalizeFromHistory(history) {
   const topics = new Map();   //key->{label, platform, count}
   const creators = new Map(); //key->{name, platform, count}
 
-  for (const doc of eventDocs) {
-    const platform = doc.platform;
+  //changed to match new aggregated signal schema
+  for (const item of history) {
+    const platform = doc.platform || "unknown";
+    const label = item.label || "unknown";
+    const weight = Number.isFinite(item.occurrenceCount) ? item.occurrenceCount : 1;
 
-    for (const s of doc.signals || []) {
-      const label = s.label || "unknown";
-      const topicKey = `${platform}::${label}`;
-      const t = topics.get(topicKey) || { label, platform, seconds: undefined, count: 0 };
-      t.count += 1;
-      topics.set(topicKey, t);
+    //topics
+    const topicKey = `${platform}::${label}`;
+    const t = topics.get(topicKey) || { label, platform, seconds: undefined, count: 0 };
+    t.count += weight;
+    topics.set(topicKey, t);
+      
+    //creators
+    const cs = Array.isArray(item.creators) ? item.creators : [];
 
-      if (s.creator) {
-        const creatorKey = `${platform}::${s.creator}`;
-        const c = creators.get(creatorKey) || { name: s.creator, platform, seconds: undefined, count: 0 };
-        c.count += 1;
-        creators.set(creatorKey, c);
-      }
+    for (const cname of cs) {
+      const creatorKey = `${platform}::${cname}`;
+      const c = creators.get(creatorKey) || { name: cname, platform, count: 0 };
+      c.count += weight;
+      creators.set(creatorKey, c);
     }
   }
 
@@ -60,8 +64,8 @@ function buildDeterministicOutput({ topTopics, topCreators, alerts, ageGroup, lo
 
 
 //updated inout to match new backend schema
-async function buildSummary({ eventDocs, ageGroup = "unknown", location = "unknown" }) {
-  const { topTopics, topCreators } = normalizeFromEventDocs(Array.isArray(eventDocs) ? eventDocs : []);
+async function buildSummary({ history, ageGroup = "unknown", location = "unknown" }) {
+  const { topTopics, topCreators } = normalizeFromHistory(Array.isArray(history) ? history : []);
 
   //risk scoring
   const rawAlerts = scoreRisks({ topTopics, topCreators });
@@ -93,7 +97,7 @@ async function buildSummary({ eventDocs, ageGroup = "unknown", location = "unkno
     meta: { generatedAt: 0, ageGroup: "...", location: "..." },
   };
 
-  const limJson = await generateSummaryLLM({ facts, outputSchemaHint });
+  const llmJson  = await generateSummaryLLM({ facts, outputSchemaHint });
 
   //use LLM output if valid
   if (llmJson) {
