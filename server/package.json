@@ -4,9 +4,9 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "echo 'Error: no test specified' && exit 1",
-    "lint": "echo 'lint skipped'"
-    "dev": "nodemon"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon",
+    "lint": "echo \"lint skipped\""
   },
   "keywords": [],
   "author": "",
