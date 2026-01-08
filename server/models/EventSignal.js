@@ -2,8 +2,7 @@ const mongoose = require('mongoose');
 
 const eventSignalSchema = new mongoose.Schema({
     deviceId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Device',
+        type: mongoose.Schema.Types.ObjectId,ref: 'Device',
         required: true,
     },
     platform: {
@@ -21,6 +20,7 @@ const eventSignalSchema = new mongoose.Schema({
             type: String,
             required: true,
             enum: {
+
                 values: ['hashtag', 'channel', 'search_term', 'url_visit'],
                 message: '{VALUE} is not a supported signal kind'
             }

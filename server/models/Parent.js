@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const bcrypt = require('bcrypt')
 
 const parentSchema = new mongoose.Schema({
     email: {
@@ -15,11 +16,29 @@ const parentSchema = new mongoose.Schema({
     name: {
         type: String
     },
-    devices: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Device' }],
+    devices: [{ 
+        type: mongoose.Schema.Types.ObjectId, ref: 'Device' 
+    }],
     createdAt: {
         type: Date,
         immutable: true
     },
 }, { timestamps: true })
+
+
+
+
+//before saving the parent, hash the password if it has been modified
+parentSchema.pre('save', async function () {
+    if (!this.isModified('password')) return
+    
+    try {
+        const salt = await bcrypt.genSalt(10)
+        this.password = await bcrypt.hash(this.password, salt)
+        
+    } catch (err) {
+        throw err
+    }
+})
 
 module.exports = mongoose.model("Parent", parentSchema)
