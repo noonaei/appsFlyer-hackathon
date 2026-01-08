@@ -64,4 +64,4 @@ function suggestedActionHe(severity) {
   return "לשאול בסקרנות על הנושא ולוודא התאמה לגיל.";
 }
 
-module.exports ={explainTopicHe, explainAlertHe, suggestedActionHe};
+module.exports = {explainTopicHe, explainAlertHe, suggestedActionHe};

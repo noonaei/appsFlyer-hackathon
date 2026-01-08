@@ -158,4 +158,4 @@ function scoreRisks({ topTopics = [], topCreators = [] }) {
   });
 }
 
-module.exports = {RULES, scoreRisks};
+module.exports = {RULES ,scoreRisks};
