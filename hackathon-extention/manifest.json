@@ -1,43 +1,55 @@
 {
   "manifest_version": 3,
-  "name": "MV3 Minimal Scaffold",
-  "version": "0.1.0",
-  "description": "Minimal MV3 extension with service worker, storage wrapper, and options page",
-
+  "name": "Cross-Platform Signal Collector",
+  "version": "1.0",
+  
+  "permissions": [
+    "storage",
+    "scripting"
+  ],
+  
+  "host_permissions": [
+    "https://www.instagram.com/*",
+    "https://instagram.com/*",
+    "https://www.youtube.com/*",
+    "https://youtube.com/*",
+    "https://m.youtube.com/*",
+    "https://www.tiktok.com/*",
+    "https://tiktok.com/*",
+    "https://www.reddit.com/*",
+    "https://reddit.com/*",
+    "https://www.twitch.tv/*",
+    "https://twitch.tv/*",
+    "http://localhost/*",
+    
+  ],
+  
   "background": {
     "service_worker": "background.js",
     "type": "module"
   },
-
-  "options_page": "options.html",
-
-  "permissions": [
-    "storage",
-    "tabs"
-  ],
-
-  "host_permissions": [
-    "*://*.youtube.com/*",
-    "*://*.instagram.com/*",
-    "*://*.tiktok.com/*",
-    "*://*.reddit.com/*"
-  ],
-
-  "action": {
-    "default_title": "MV3 Scaffold"
-  },
-
+  
   "content_scripts": [
     {
       "matches": [
-        "*://*.youtube.com/*",
-        "*://*.instagram.com/*/*",
-        "*://*.tiktok.com/*",
-        "*://*.reddit.com/*"
+        "https://www.instagram.com/*",
+        "https://instagram.com/*",
+        "https://www.youtube.com/*",
+        "https://youtube.com/*",
+        "https://m.youtube.com/*",
+        "https://www.tiktok.com/*",
+        "https://tiktok.com/*",
+        "https://www.reddit.com/*",
+        "https://reddit.com/*",
+        "https://www.twitch.tv/*",
+        "https://twitch.tv/*"
       ],
-      "js": ["content.js"],
-      "run_at": "document_idle",
-      "all_frames": true
+      "js": ["content.js"]
     }
-  ]
+  ],
+  
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Signal Collector"
+  }
 }

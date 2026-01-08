@@ -4,19 +4,45 @@ const QUEUE_KEY = 'eventQueue';
 const MAX_QUEUE_SIZE = 100;
 
 export async function enqueueSignal(signal) {
+  const {
+    deviceToken,
+    platform,
+    kind,
+    label,
+    url,
+    creator,
+    timestamp
+  } = signal;
+
+  if (!deviceToken || !platform || !kind || !label) {
+    console.warn('[QUEUE] Invalid signal dropped', signal);
+    return;
+  }
+
+  const normalized = {
+    deviceToken,
+    platform,     // 'youtube', 'instagram', etc
+    kind,         // 'hashtag', 'search_term', 'url_visit'
+    label,
+    url,
+    creator,
+    timestamp: timestamp || Date.now()
+  };
+
   const queue = (await storage.get(QUEUE_KEY)) || [];
+  queue.push(normalized);
 
-  queue.push(signal);
-
-  // Enforce max size (drop oldest)
+  // Enforce max queue size (drop oldest)
   if (queue.length > MAX_QUEUE_SIZE) {
     queue.splice(0, queue.length - MAX_QUEUE_SIZE);
   }
 
-  await storage.set({ [QUEUE_KEY]: queue });
+  await storage.set({ [QUEUE_KEY]: queue,
+                       queueDirty: true
+  });
 }
 
-export async function getBatch(batchSize) {
+export async function getBatch(batchSize = 20) {
   const queue = (await storage.get(QUEUE_KEY)) || [];
   return queue.slice(0, batchSize);
 }

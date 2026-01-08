@@ -1,69 +1,188 @@
-import { startSession, stopSession } from './tracker.js';
-import { maybeEmitSearchSignal } from './searchDetector.js';
-import { enqueueSignal } from './eventQueue.js';
+// background.js
+import { enqueueSignal, getBatch, removeBatch, queueSize } from './eventQueue.js';
+import { getDeviceToken } from './storage.js';
 
-console.log('Service worker loaded');
+console.log('[BG] ========== SERVICE WORKER STARTED ==========');
+console.log('[BG] Timestamp:', new Date().toISOString());
 
-async function handleActiveTabChange(tabId, windowId) {
-  await stopSession('tab change');
+const UPLOAD_ENDPOINT = process.env.PORT;
+const BATCH_SIZE = 20;
+const UPLOAD_INTERVAL_MS = 15_000; // 15 seconds
 
-  const tab = await chrome.tabs.get(tabId);
-  if (tab.windowId !== windowId) return;
+// Initialize queueDirty flag
+chrome.storage.local.get('queueDirty', (result) => {
+  if (result.queueDirty === undefined) {
+    chrome.storage.local.set({ queueDirty: false });
+  }
+});
 
-  await startSession(tab);
+// Upload batch to server
+async function uploadBatch() {
+  try {
+    const result = await chrome.storage.local.get('queueDirty');
+    const queueDirty = result?.queueDirty;
+
+    if (!queueDirty) return;
+
+    const size = await queueSize();
+    if (!size) {
+      await chrome.storage.local.set({ queueDirty: false });
+      return;
+    
+    }
+
+    const batch = await getBatch(BATCH_SIZE);
+    if (!batch.length) return;
+
+    console.log('[BG] Processing batch of', batch.length, 'signals');
+
+    // Group by: deviceId + platform + kind
+    const grouped = {};
+    batch.forEach(signal => {
+      const key = `${signal.deviceToken}|${signal.platform}|${signal.kind}`;
+      
+      if (!grouped[key]) {
+       grouped[key] = {
+         deviceId: signal.deviceToken,
+         platform: signal.platform,
+         kind: signal.kind,
+         labels: [],
+         timestamp: new Date().toISOString()
+       };
+      }
+      
+      grouped[key].labels.push(signal.label);
+    });
+
+    console.log('[BG] Grouped into', Object.keys(grouped).length, 'requests');
+
+    // Send each grouped request
+    let totalSent = 0;
+    for (const [key, payload] of Object.entries(grouped)) {
+      console.log('[BG] Sending request:', payload.platform, payload.kind, `(${payload.labels.length} items)`);
+      
+      const res = await fetch(UPLOAD_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        console.error('[BG] Upload failed for', key, ':', res.status);
+        return; // Don't remove batch if any upload fails
+      }
+
+      totalSent += payload.labels.length;
+    }
+
+    // Only remove batch after all successful uploads
+    await removeBatch(batch.length);
+    await chrome.storage.local.set({ queueDirty: false });
+
+    console.log('[BG] Successfully sent', totalSent, 'total items');
+  } catch (err) {
+    console.error('[BG] Upload batch error:', err);
+  }
 }
 
-chrome.runtime.onInstalled.addListener(() => {
-  console.log('Installed');
-});
+// Run upload every interval
+setInterval(uploadBatch, UPLOAD_INTERVAL_MS);
 
-chrome.runtime.onStartup.addListener(async () => {
-  console.log('Startup');
-  await stopSession('browser restart');
-});
+// Handle signal batch messages from content script
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log('[BG] Incoming message:', request);
 
-chrome.tabs.onActivated.addListener(async ({ tabId, windowId }) => {
-  await handleActiveTabChange(tabId, windowId);
-});
-
-chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  if (changeInfo.url) {
-    maybeEmitSearchSignal(changeInfo.url);
-  }
-
-  if (!tab.active || !changeInfo.url) return;
-
-  await stopSession('url change');
-  await startSession(tab);
-});
-
-chrome.tabs.onRemoved.addListener(async (tabId) => {
-  const session = await chrome.storage.local.get('currentSession');
-  if (session?.currentSession?.tabId === tabId) {
-    await stopSession('tab closed');
-  }
-});
-
-chrome.windows.onFocusChanged.addListener(async (windowId) => {
-  if (windowId === chrome.windows.WINDOW_ID_NONE) {
-    await stopSession('window blur');
+  if (request.type !== 'signal_batch') {
     return;
   }
 
-  const [tab] = await chrome.tabs.query({ active: true, windowId });
-  if (tab) {
-    await startSession(tab);
+  const { payload } = request;
+
+  if (
+    !payload ||
+    !payload.platform ||
+    !payload.kind ||
+    !Array.isArray(payload.labels) ||
+    payload.labels.length === 0
+  ) {
+    console.warn('[BG] Invalid signal_batch payload:', payload);
+    sendResponse({ success: false, error: 'Invalid payload' });
+    return;
   }
+
+  chrome.storage.local.get(['deviceToken'], async (result) => {
+    const deviceToken = result?.deviceToken;
+
+    if (!deviceToken) {
+      console.warn('[BG] No device token found in storage');
+      sendResponse({ success: false, error: 'No device token' });
+      return;
+    }
+
+    try {
+      console.log(
+        `[BG] Enqueuing ${payload.labels.length} labels for`,
+        payload.platform,
+        payload.kind
+      );
+
+      for (const label of payload.labels) {
+        await enqueueSignal({
+          deviceToken,
+          platform: payload.platform,
+          kind: payload.kind,
+          label,
+          timestamp: payload.timestamp || new Date().toISOString()
+        });
+      }
+
+      console.log('[BG] queueDirty set to TRUE');
+      await chrome.storage.local.set({ queueDirty: true });
+
+      sendResponse({ success: true });
+    } catch (error) {
+      console.error('[BG] Failed to enqueue signals:', error);
+      sendResponse({ success: false, error: error.message });
+    }
+  });
+
+  return true; // keep message channel open
 });
 
-chrome.runtime.onMessage.addListener((msg, sender) => {
-  if (msg.type === 'hashtag_signal') {
-    enqueueSignal({
-      type: 'content_hashtags',
-      timestamp: msg.timestamp,
-      platform: msg.platform,
-      hashtags: msg.hashtags,
-      url: msg.url
-    });
+
+// Record URL visits
+async function recordUrlVisit(tab) {
+  if (!tab?.url || tab.url.startsWith('chrome://')) return;
+
+  const deviceToken = await getDeviceToken();
+  if (!deviceToken) return;
+
+  const platform = inferPlatform(tab.url);
+  
+  enqueueSignal({
+    deviceToken,
+    platform,
+    kind: 'url_visit',
+    label: new URL(tab.url).hostname,
+    url: tab.url,
+    timestamp: Date.now()
+  });
+}
+
+// Helper to map URL → platform enum
+function inferPlatform(url) {
+  if (!url) return 'unknown';
+  if (url.includes('youtube.com')) return 'youtube';
+  if (url.includes('tiktok.com')) return 'tiktok';
+  if (url.includes('instagram.com')) return 'instagram';
+  if (url.includes('reddit.com')) return 'reddit';
+  if (url.includes('google.com/search')) return 'google_search';
+  return 'unknown';
+}
+
+// Extension installed
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason === 'install') {
+    console.log('[BG] Extension installed');
   }
 });
