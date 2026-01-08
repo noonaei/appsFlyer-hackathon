@@ -29,10 +29,10 @@ async function generateSummaryLLM({ facts, outputSchemaHint }) {
 
   //system instructions + user prompt
   const system = [
-    "You write concise, detailed, parent-friendly Hebrew summaries about a child's online activity.",
-    "Return ONLY valid JSON (no markdown, no extra text).",
-    "Do not invent topics/creators/platforms not present in the facts.",
-    "Avoid full URLs; use domains only if needed.",
+    "you write concise, detailed, parent-friendly hebrew summaries about a child's online activity.",
+    "return ONLY valid JSON (no markdown, no extra text).",
+    "do not invent topics/creators/platforms not present in the facts.",
+    "avoid full URLs; use domains only if needed.",
   ].join(" ");
 
   const user = { facts, outputSchemaHint };

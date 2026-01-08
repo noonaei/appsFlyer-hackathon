@@ -54,6 +54,7 @@ router.post("/summary", async (req, res) => {
 
     //4)validating output JSON against schema
     const parsedOut = AIOutputSchema.safeParse(result);
+    
     //printing JSON in console for testing
     const out = parsedOut.data;
 
