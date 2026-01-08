@@ -5,7 +5,7 @@ import { getDeviceToken } from './storage.js';
 console.log('[BG] ========== SERVICE WORKER STARTED ==========');
 console.log('[BG] Timestamp:', new Date().toISOString());
 
-const UPLOAD_ENDPOINT = 'http://localhost:3000/api/signals';
+const UPLOAD_ENDPOINT = process.env.PORT;
 const BATCH_SIZE = 20;
 const UPLOAD_INTERVAL_MS = 15_000; // 15 seconds
 

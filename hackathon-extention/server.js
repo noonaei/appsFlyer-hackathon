@@ -7,7 +7,7 @@ const app = express();
 // Allow requests from your extension
 app.use(cors({
   origin: ['chrome-extension://ojeoflagjllmfjbmnfgogbdgkhabiiko'], 
-  methods: ['GET','POST'],
+  methods: ['POST'],
   credentials: true
 }));
 

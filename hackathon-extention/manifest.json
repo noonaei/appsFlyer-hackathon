@@ -20,7 +20,8 @@
     "https://reddit.com/*",
     "https://www.twitch.tv/*",
     "https://twitch.tv/*",
-    "http://localhost/*"
+    "http://localhost/*",
+    
   ],
   
   "background": {
