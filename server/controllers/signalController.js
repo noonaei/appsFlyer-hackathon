@@ -142,29 +142,57 @@ const deleteSignals = async (req, res) => {
 }
 
 const saveSignals = async (req, res) => {
-
-  const { platform, signals } = req.body
+  const { signals } = req.body  // signals array with platform info
   const deviceId = req.device._id
 
-  console.log('[SAVE_SIGNALS] Received request:', { platform, signalsCount: signals?.length, deviceId })
+  console.log('[SAVE_SIGNALS] Received request:', { signalsCount: signals?.length, deviceId })
 
   try {
+    // Group signals by platform
+    const groupedByPlatform = {};
+    
+    signals.forEach(signalGroup => {
+      const { platform, kind, labels, creator, timestamp } = signalGroup;
+      
+      if (!groupedByPlatform[platform]) {
+        groupedByPlatform[platform] = [];
+      }
+      
+      // Expand labels array into individual signals
+      labels.forEach(label => {
+        groupedByPlatform[platform].push({
+          kind,
+          label,
+          creator: creator || null,
+          url: signalGroup.url || null,
+          timestamp: timestamp || new Date()
+        });
+      });
+    });
 
-    const newSignalBatch = await EventSignal.create({
-      deviceId,
-      platform,
-      signals
-    })
+    // Create one EventSignal document per platform
+    const savedSignals = [];
+    for (const [platform, platformSignals] of Object.entries(groupedByPlatform)) {
+      const newSignalBatch = await EventSignal.create({
+        deviceId,
+        platform,
+        signals: platformSignals
+      });
+      savedSignals.push(newSignalBatch);
+      console.log('[SAVE_SIGNALS] Successfully saved', platform, ':', newSignalBatch._id);
+    }
 
-    console.log('[SAVE_SIGNALS] Successfully saved:', newSignalBatch._id)
-    return res.status(201).json(newSignalBatch)
+    return res.status(201).json({ 
+      message: 'Signals saved successfully',
+      batches: savedSignals 
+    });
 
   } catch (error) {
-    console.error('[SAVE_SIGNALS] Error:', error.message)
-    console.error('[SAVE_SIGNALS] Full error:', error)
-    return res.status(400).json({ error: error.message })
+    console.error('[SAVE_SIGNALS] Error:', error.message);
+    console.error('[SAVE_SIGNALS] Full error:', error);
+    return res.status(400).json({ error: error.message });
   }
-}
+};
 
 module.exports = {
   getSignalsLast5Days,

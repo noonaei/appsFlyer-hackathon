@@ -7,7 +7,7 @@ console.log('[BG] Timestamp:', new Date().toISOString());
 
 // These will be loaded from server config
 let CONFIG_ENDPOINT = null;
-let UPLOAD_ENDPOINT = null;
+let UPLOAD_ENDPOINT = 'http://localhost:5000/api/signals/add'; // Default fallback
 const BATCH_SIZE = 100;
 const UPLOAD_INTERVAL_MS = 30_000; // 30 seconds
 
@@ -57,7 +57,7 @@ const KIND_MAP = {
 };
 
 // Dynamic endpoint - will be loaded from server
-UPLOAD_ENDPOINT = DEFAULT_UPLOAD_ENDPOINT;
+UPLOAD_ENDPOINT = detectServerEndpoint();
 
 // Fetch config from server on startup
 async function loadConfig() {
@@ -72,6 +72,7 @@ async function loadConfig() {
     if (!res.ok) {
       console.warn('[BG] Failed to fetch config:', res.status);
       UPLOAD_ENDPOINT = `${serverUrl}/api/signals/add`;
+      console.log('[BG] Using fallback endpoint:', UPLOAD_ENDPOINT);
       return;
     }
     
@@ -148,26 +149,32 @@ async function uploadBatch() {
     const payload = Object.values(grouped);
 
     console.log('[BG] Sending', payload.length, 'signal groups');
-    console.log('[BG] Payload:', JSON.stringify(payload, null, 2));
+    
+    const requestBody = {
+      deviceToken: deviceToken,
+      signals: payload
+    };
+    
+    console.log('[BG] Full request body:', JSON.stringify(requestBody, null, 2));
 
     const res = await fetch(UPLOAD_ENDPOINT, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        deviceToken: deviceToken,
-        signals: payload
-      })
+      body: JSON.stringify(requestBody)
     });
+
+    const responseBody = await res.text();
+    console.log('[BG] Response status:', res.status);
+    console.log('[BG] Response body:', responseBody);
 
     if (!res.ok) {
       console.error('[BG] Upload failed:', res.status, res.statusText);
       return;
     }
 
-    const responseBody = await res.text();
-    console.log('[BG] Upload successful. Response:', responseBody);
+    console.log('[BG] Upload successful');
 
     // Only remove batch after successful upload
     await removeBatch(batch.length);
