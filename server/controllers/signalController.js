@@ -146,6 +146,7 @@ const saveSignals = async (req, res) => {
   const { platform, signals } = req.body
   const deviceId = req.device._id
 
+  console.log('[SAVE_SIGNALS] Received request:', { platform, signalsCount: signals?.length, deviceId })
 
   try {
 
@@ -155,9 +156,12 @@ const saveSignals = async (req, res) => {
       signals
     })
 
+    console.log('[SAVE_SIGNALS] Successfully saved:', newSignalBatch._id)
     return res.status(201).json(newSignalBatch)
 
   } catch (error) {
+    console.error('[SAVE_SIGNALS] Error:', error.message)
+    console.error('[SAVE_SIGNALS] Full error:', error)
     return res.status(400).json({ error: error.message })
   }
 }

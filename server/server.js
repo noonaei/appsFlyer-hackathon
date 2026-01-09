@@ -21,6 +21,13 @@ app.use((req, res, next) => {
   next()
 })
 
+// CONFIG ENDPOINT
+app.get('/api/config', (req, res) => {
+    res.json({
+      uploadEndpoint: process.env.UPLOAD_ENDPOINT || 'http://localhost:5000/api/signals/add'
+    });
+  });
+
 // routes
 app.use('/api/signals', signalRoutes)
 app.use('/api/parents', parentRoutes)

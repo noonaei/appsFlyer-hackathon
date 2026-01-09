@@ -6,12 +6,15 @@ console.log('[EXT] CONTENT SCRIPT LOADED');
 document.body.style.border = '5px solid red';
 
 const KIND_MAP = {
-  video_titles: 'video_titles',
-  VideoTitles: 'video_titles',
+  video_titles: 'search_term',
+  VideoTitles: 'search_term',
   creators: 'creators',
   Creators: 'creators',
   hashtag: 'hashtag',
-  Hashtag: 'hashtag'
+  Hashtag: 'hashtag',
+  Hashtags: 'hashtag',  // plural form
+  SubReddits: 'channel',  // subreddits map to creators kind (will be converted to 'channel' in background)
+  subreddits: 'channel'   // lowercase (if normalized)
 };
 
 
