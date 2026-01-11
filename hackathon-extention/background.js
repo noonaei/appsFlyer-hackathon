@@ -5,9 +5,95 @@ import { getDeviceToken } from './storage.js';
 console.log('[BG] ========== SERVICE WORKER STARTED ==========');
 console.log('[BG] Timestamp:', new Date().toISOString());
 
-const UPLOAD_ENDPOINT = process.env.PORT;
-const BATCH_SIZE = 20;
-const UPLOAD_INTERVAL_MS = 15_000; // 15 seconds
+// These will be loaded from server config
+let CONFIG_ENDPOINT = null;
+let UPLOAD_ENDPOINT = 'http://localhost:5000/api/signals/add'; // Default fallback
+const BATCH_SIZE = 100;
+const UPLOAD_INTERVAL_MS = 30_000; // 30 seconds
+
+// Try to detect server from extension storage or use default discovery
+async function detectServerEndpoint() {
+  try {
+    // First check if we have a saved config
+    const stored = await chrome.storage.local.get(['serverUrl']);
+    if (stored.serverUrl) {
+      return stored.serverUrl;
+    }
+    
+    // Try common localhost ports
+    const ports = [5000, 3000, 8000, 8080];
+    for (const port of ports) {
+      try {
+        const url = `http://localhost:${port}/api/config`;
+        const res = await fetch(url, { signal: AbortSignal.timeout(2000) });
+        if (res.ok) {
+          console.log('[BG] Found server at port:', port);
+          return `http://localhost:${port}`;
+        }
+      } catch (e) {
+        // Continue to next port
+      }
+    }
+    
+    // Fallback to default
+    return 'http://localhost:5000';
+  } catch (err) {
+    console.error('[BG] Error detecting server:', err);
+    return 'http://localhost:5000';
+  }
+}
+
+// Map KIND from content script to server kind
+const KIND_MAP = {
+  'video_titles': 'video_title',
+  'VideoTitles': 'video_title',
+  'creators': 'creator',
+  'Creators': 'creator',
+  'hashtag': 'hashtag',
+  'Hashtag': 'hashtag',
+  'Hashtags': 'hashtag',
+  'SubReddits': 'channel',
+  'subreddits': 'channel'
+};
+
+// Dynamic endpoint - will be loaded from server
+UPLOAD_ENDPOINT = detectServerEndpoint();
+
+// Fetch config from server on startup
+async function loadConfig() {
+  try {
+    // Auto-detect server
+    const serverUrl = await detectServerEndpoint();
+    CONFIG_ENDPOINT = `${serverUrl}/api/config`;
+    
+    console.log('[BG] Fetching config from:', CONFIG_ENDPOINT);
+    const res = await fetch(CONFIG_ENDPOINT);
+    
+    if (!res.ok) {
+      console.warn('[BG] Failed to fetch config:', res.status);
+      UPLOAD_ENDPOINT = `${serverUrl}/api/signals/add`;
+      console.log('[BG] Using fallback endpoint:', UPLOAD_ENDPOINT);
+      return;
+    }
+    
+    const config = await res.json();
+    UPLOAD_ENDPOINT = config.uploadEndpoint;
+    console.log('[BG] Loaded endpoint from server:', UPLOAD_ENDPOINT);
+    
+    // Save for next time
+    await chrome.storage.local.set({ 
+      uploadEndpoint: UPLOAD_ENDPOINT,
+      serverUrl: serverUrl
+    });
+  } catch (err) {
+    console.error('[BG] Error loading config:', err);
+    // Fallback
+    UPLOAD_ENDPOINT = 'http://localhost:5000/api/signals/add';
+  }
+}
+
+// Load config on startup
+loadConfig();
 
 // Initialize queueDirty flag
 chrome.storage.local.get('queueDirty', (result) => {
@@ -28,7 +114,6 @@ async function uploadBatch() {
     if (!size) {
       await chrome.storage.local.set({ queueDirty: false });
       return;
-    
     }
 
     const batch = await getBatch(BATCH_SIZE);
@@ -36,50 +121,66 @@ async function uploadBatch() {
 
     console.log('[BG] Processing batch of', batch.length, 'signals');
 
-    // Group by: deviceId + platform + kind
+    // Get deviceToken from first signal
+    const deviceToken = batch[0]?.deviceToken;
+    if (!deviceToken) {
+      console.error('[BG] No deviceToken in batch');
+      return;
+    }
+
+    // Group signals by platform and kind
     const grouped = {};
     batch.forEach(signal => {
-      const key = `${signal.deviceToken}|${signal.platform}|${signal.kind}`;
+      const key = `${signal.platform}|${signal.kind}`;
       
       if (!grouped[key]) {
-       grouped[key] = {
-         deviceId: signal.deviceToken,
-         platform: signal.platform,
-         kind: signal.kind,
-         labels: [],
-         timestamp: new Date().toISOString()
-       };
+        grouped[key] = {
+          platform: signal.platform,
+          kind: KIND_MAP[signal.kind] || signal.kind,
+          labels: [],
+          timestamp: new Date().toISOString()
+        };
       }
       
       grouped[key].labels.push(signal.label);
     });
 
-    console.log('[BG] Grouped into', Object.keys(grouped).length, 'requests');
+    // Convert to array format
+    const payload = Object.values(grouped);
 
-    // Send each grouped request
-    let totalSent = 0;
-    for (const [key, payload] of Object.entries(grouped)) {
-      console.log('[BG] Sending request:', payload.platform, payload.kind, `(${payload.labels.length} items)`);
-      
-      const res = await fetch(UPLOAD_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+    console.log('[BG] Sending', payload.length, 'signal groups');
+    
+    const requestBody = {
+      deviceToken: deviceToken,
+      signals: payload
+    };
+    
+    console.log('[BG] Full request body:', JSON.stringify(requestBody, null, 2));
 
-      if (!res.ok) {
-        console.error('[BG] Upload failed for', key, ':', res.status);
-        return; // Don't remove batch if any upload fails
-      }
+    const res = await fetch(UPLOAD_ENDPOINT, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
+    });
 
-      totalSent += payload.labels.length;
+    const responseBody = await res.text();
+    console.log('[BG] Response status:', res.status);
+    console.log('[BG] Response body:', responseBody);
+
+    if (!res.ok) {
+      console.error('[BG] Upload failed:', res.status, res.statusText);
+      return;
     }
 
-    // Only remove batch after all successful uploads
+    console.log('[BG] Upload successful');
+
+    // Only remove batch after successful upload
     await removeBatch(batch.length);
     await chrome.storage.local.set({ queueDirty: false });
 
-    console.log('[BG] Successfully sent', totalSent, 'total items');
+    console.log('[BG] Successfully sent', batch.length, 'signals');
   } catch (err) {
     console.error('[BG] Upload batch error:', err);
   }
@@ -90,8 +191,6 @@ setInterval(uploadBatch, UPLOAD_INTERVAL_MS);
 
 // Handle signal batch messages from content script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log('[BG] Incoming message:', request);
-
   if (request.type !== 'signal_batch') {
     return;
   }
@@ -114,29 +213,28 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const deviceToken = result?.deviceToken;
 
     if (!deviceToken) {
-      console.warn('[BG] No device token found in storage');
+      console.warn('[BG] No device token found');
       sendResponse({ success: false, error: 'No device token' });
       return;
     }
 
     try {
       console.log(
-        `[BG] Enqueuing ${payload.labels.length} labels for`,
-        payload.platform,
-        payload.kind
+        `[BG] Enqueuing ${payload.labels.length} labels for ${payload.platform} / ${payload.kind}`
       );
 
+      // Enqueue each label as a separate signal (for deduplication)
       for (const label of payload.labels) {
         await enqueueSignal({
           deviceToken,
           platform: payload.platform,
           kind: payload.kind,
-          label,
-          timestamp: payload.timestamp || new Date().toISOString()
+          label: label,
+          timestamp: payload.timestamp || Date.now()
         });
       }
 
-      console.log('[BG] queueDirty set to TRUE');
+      console.log('[BG] Setting queueDirty to TRUE');
       await chrome.storage.local.set({ queueDirty: true });
 
       sendResponse({ success: true });
@@ -146,39 +244,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
   });
 
-  return true; // keep message channel open
+  return true;
 });
-
-
-// Record URL visits
-async function recordUrlVisit(tab) {
-  if (!tab?.url || tab.url.startsWith('chrome://')) return;
-
-  const deviceToken = await getDeviceToken();
-  if (!deviceToken) return;
-
-  const platform = inferPlatform(tab.url);
-  
-  enqueueSignal({
-    deviceToken,
-    platform,
-    kind: 'url_visit',
-    label: new URL(tab.url).hostname,
-    url: tab.url,
-    timestamp: Date.now()
-  });
-}
-
-// Helper to map URL → platform enum
-function inferPlatform(url) {
-  if (!url) return 'unknown';
-  if (url.includes('youtube.com')) return 'youtube';
-  if (url.includes('tiktok.com')) return 'tiktok';
-  if (url.includes('instagram.com')) return 'instagram';
-  if (url.includes('reddit.com')) return 'reddit';
-  if (url.includes('google.com/search')) return 'google_search';
-  return 'unknown';
-}
 
 // Extension installed
 chrome.runtime.onInstalled.addListener((details) => {
