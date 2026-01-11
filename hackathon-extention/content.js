@@ -6,8 +6,8 @@ console.log('[EXT] CONTENT SCRIPT LOADED');
 document.body.style.border = '5px solid red';
 
 const KIND_MAP = {
-  video_titles: 'search_term',
-  VideoTitles: 'search_term',
+  video_titles: 'video_titles',
+  VideoTitles: 'video_titles',
   creators: 'creators',
   Creators: 'creators',
   hashtag: 'hashtag',

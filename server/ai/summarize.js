@@ -2,6 +2,7 @@ const { scoreRisks } = require("./riskRules");
 const { explainTopicHe, explainAlertHe, suggestedActionHe } = require("./hebrewTemplates");
 const { AIOutputSchema } = require("./schema");
 const { generateSummaryLLM } = require("./llm");
+const { hashKey, get: cacheGet, set: cacheSet } = require("./cache");
 
 //func to convert backend schema into arrays so ai side works
  function normalizeFromHistory(history) {
@@ -12,7 +13,17 @@ const { generateSummaryLLM } = require("./llm");
   for (const item of history) {
     const platform = item.platform || "unknown";
     const label = item.label || "unknown";
+    const kind = item.kind || "unknown";
     const weight = Number.isFinite(item.occurrenceCount) ? item.occurrenceCount : 1;
+
+    //kind==creators, new logic where the creators are in the label
+    if (kind === "creators") {
+      const creatorKey = `${platform}::${label}`;
+      const c = creators.get(creatorKey) || { name: label, platform, seconds: undefined, count: 0 };
+      c.count += weight;
+      creators.set(creatorKey, c);
+      continue;
+    }
 
     //topics
     const topicKey = `${platform}::${label}`;
@@ -20,15 +31,6 @@ const { generateSummaryLLM } = require("./llm");
     t.count += weight;
     topics.set(topicKey, t);
       
-    //creators
-    const cs = Array.isArray(item.creators) ? item.creators : [];
-
-    for (const cname of cs) {
-      const creatorKey = `${platform}::${cname}`;
-      const c = creators.get(creatorKey) || { name: cname, platform, count: 0 };
-      c.count += weight;
-      creators.set(creatorKey, c);
-    }
   }
 
   const topTopics = [...topics.values()].sort((a, b) => b.count - a.count);
@@ -87,6 +89,17 @@ async function buildSummary({ history, ageGroup = "unknown", location = "unknown
     alerts,
   };
 
+    //---- cache (facts -> final output) ----
+  const cacheKey = hashKey({ facts, schema: "AIOutputSchema:v1" });
+  const cached = cacheGet(cacheKey);
+  if (cached) {
+    //enforce meta we control
+    cached.meta.generatedAt = Date.now();
+    cached.meta.ageGroup = ageGroup;
+    cached.meta.location = location;
+    return cached;
+  }
+
   //call LLM to generate full summary
   const outputSchemaHint = {
     shortSummaryHe: "...",
@@ -108,11 +121,15 @@ async function buildSummary({ history, ageGroup = "unknown", location = "unknown
       parsed.data.meta.generatedAt = Date.now();
       parsed.data.meta.ageGroup = ageGroup;
       parsed.data.meta.location = location;
+      // cache the validated output
+      cacheSet(cacheKey, parsed.data);
       return parsed.data;
     }
   }
   //fallback to deterministic
-  return buildDeterministicOutput({ topTopics, topCreators, alerts, ageGroup, location });
+  const fallback = buildDeterministicOutput({ topTopics, topCreators, alerts, ageGroup, location });
+  cacheSet(cacheKey, fallback);
+  return fallback;
 }
 
 module.exports = { buildSummary };

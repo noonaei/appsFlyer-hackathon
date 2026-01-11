@@ -9,7 +9,7 @@ console.log('[BG] Timestamp:', new Date().toISOString());
 let CONFIG_ENDPOINT = null;
 let UPLOAD_ENDPOINT = 'http://localhost:5000/api/signals/add'; // Default fallback
 const BATCH_SIZE = 100;
-const UPLOAD_INTERVAL_MS = 30_000; // 30 seconds
+const UPLOAD_INTERVAL_MS = 5_000; // 30 seconds
 
 // Try to detect server from extension storage or use default discovery
 async function detectServerEndpoint() {
@@ -21,7 +21,7 @@ async function detectServerEndpoint() {
     }
     
     // Try common localhost ports
-    const ports = [5000, 3000, 8000, 8080];
+    const ports = [4000, 5000, 3000, 8000, 8080];
     for (const port of ports) {
       try {
         const url = `http://localhost:${port}/api/config`;
@@ -44,18 +44,18 @@ async function detectServerEndpoint() {
 }
 
 // Map KIND from content script to server kind
+//minimal fixes to match server enum
 const KIND_MAP = {
-  'video_titles': 'video_title',
-  'VideoTitles': 'video_title',
-  'creators': 'creator',
-  'Creators': 'creator',
+  'video_titles': 'video_titles',
+  'VideoTitles': 'video_titles',
+  'creators': 'creators',
+  'Creators': 'creators',
   'hashtag': 'hashtag',
   'Hashtag': 'hashtag',
   'Hashtags': 'hashtag',
-  'SubReddits': 'channel',
+  'SubReddits': 'channel',    
   'subreddits': 'channel'
 };
-
 // Dynamic endpoint - will be loaded from server
 UPLOAD_ENDPOINT = detectServerEndpoint();
 

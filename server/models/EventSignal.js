@@ -18,7 +18,7 @@ const eventSignalSchema = new mongoose.Schema({
         required: true,
         enum: {
 
-            values: ['hashtag', 'video_titles', 'creators', 'url_visit',],
+            values: ['hashtag', 'video_titles', 'creators', 'url_visit', 'channel',],
             message: '{VALUE} is not a supported signal kind'
         }
     },

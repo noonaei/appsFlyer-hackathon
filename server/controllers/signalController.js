@@ -117,7 +117,7 @@ const deleteSignals = async (req, res) => {
     }
 
     // Delete top-level EventSignal documents that fall within the timestamp range
-    const result = await EventSignal.deleteMany({ deviceId: deviceId, timestamp: { $gte: start, $lte: end } })
+    const result = await EventSignal.deleteMany({ deviceId: new mongoose.Types.ObjectId(deviceId), timestamp: { $gte: start, $lte: end } }) //fixed to convert deviceId to ObjectId
 
     return res.status(200).json({ deletedCount: result.deletedCount, message: `${result.deletedCount} signals deleted successfully.` })
   } catch (error) {
@@ -131,7 +131,7 @@ const saveSignals = async (req, res) => {
 
   try {
     // Accept either a single signal object or an array of signals
-    const incoming = Array.isArray(req.body) ? req.body : [req.body]
+    const incoming = Array.isArray(req.body) ? req.body : Array.isArray(req.body?.signals) ? req.body.signals : [req.body]; //fixed so it works with the extension
 
     // Map incoming signals to top-level EventSignal documents
     const docs = incoming.map((s) => {
@@ -147,6 +147,10 @@ const saveSignals = async (req, res) => {
         timestamp: s?.timestamp ? new Date(s.timestamp) : new Date()
       }
     })
+    
+    console.log("[signals/add] deviceId:", deviceId);
+    console.log("[signals/add] incoming sample:", incoming?.[0]);
+    console.log("[signals/add] incoming count:", incoming?.length);
 
     const inserted = await EventSignal.insertMany(docs)
 

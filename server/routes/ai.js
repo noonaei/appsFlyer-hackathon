@@ -54,6 +54,12 @@ router.post("/summary", async (req, res) => {
 
     //4)validating output JSON against schema
     const parsedOut = AIOutputSchema.safeParse(result);
+
+    //fix 
+    if (!parsedOut.success) {
+      console.error("AI output schema mismatch:", parsedOut.error.issues);
+      return res.status(500).json({ error: "AI output schema mismatch" });
+    }
     
     //printing JSON in console for testing
     const out = parsedOut.data;
@@ -75,10 +81,7 @@ router.post("/summary", async (req, res) => {
 
     //end of test printing
 
-    if (!parsedOut.success) {
-      console.error("AI output schema mismatch:", parsedOut.error.issues);
-      return res.status(500).json({ error: "AI output schema mismatch" });
-    }
+    
 
     return res.status(200).json(parsedOut.data);
   } catch (err) {

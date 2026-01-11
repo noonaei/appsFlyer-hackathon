@@ -1,0 +1,9 @@
+{
+  "history": [
+    { "label": "#minecraft", "platform": "reddit", "kind": "hashtag", "occurrenceCount": 5 },
+    { "label": "Best Minecraft mods", "platform": "reddit", "kind": "video_titles", "occurrenceCount": 2 },
+    { "label": "MinecraftCreator", "platform": "reddit", "kind": "creators", "occurrenceCount": 1 }
+  ],
+  "ageGroup": "13-15",
+  "location": "Israel"
+}

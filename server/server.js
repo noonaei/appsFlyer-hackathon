@@ -31,6 +31,7 @@ app.use('/api/ai', aiRouter)
 // connect to db
 mongoose.connect(process.env.MONGO_URI)
     .then(() => {
+        console.log("Connected DB:", mongoose.connection.name);
         console.log('connected to database mongoDB')
         // listen to port
         app.listen(process.env.PORT, () => {
