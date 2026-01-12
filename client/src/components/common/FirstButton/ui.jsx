@@ -135,3 +135,19 @@ export function EmptyState({ title, subtitle, action }) {
     </div>
   );
 }
+
+export function LoadingLogo({ message = "טוען..." }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-8">
+      <div className="relative">
+        <img 
+          src="/src/assets/mascot_logo.png" 
+          alt="Loading" 
+          className="w-16 h-16 animate-bounce"
+        />
+        <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary-500 rounded-full animate-pulse"></div>
+      </div>
+      <div className="mt-4 text-sm font-medium text-slate-700 animate-pulse">{message}</div>
+    </div>
+  );
+}

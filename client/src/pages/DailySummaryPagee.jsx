@@ -13,6 +13,7 @@ import {
   Select,
   Skeleton,
   Input,
+  LoadingLogo,
 } from '../components/common/FirstButton/ui';
 
 const SELECTED_DEVICE_KEY = 'besafe.selectedDeviceId';
@@ -259,8 +260,9 @@ export default function DailySummaryPage() {
               hint="מסנן פריטים עם סיגנל נמוך."
             />
 
-            <div className="flex items-start justify-start">
+            <div className="flex items-end">
               <Button
+                className="w-full"
                 onClick={runAi}
                 disabled={!hasDevice || !hasData || aiLoading}
               >
@@ -278,7 +280,15 @@ export default function DailySummaryPage() {
         </CardBody>
       </Card>
 
-      {aiResult?.shortSummaryHe && (
+      {aiLoading && (
+        <Card>
+          <CardBody>
+            <LoadingLogo message="מייצר סיכום AI..." />
+          </CardBody>
+        </Card>
+      )}
+
+      {aiResult?.shortSummaryHe && !aiLoading && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Card>
             <CardHeader title="סיכום AI" />
@@ -362,6 +372,20 @@ export default function DailySummaryPage() {
                   </div>
                 ))}
               </div>
+
+              {aiResult?.topTopicsHe?.length ? (
+                <div className="mt-4 rounded-2xl border border-primary-200 bg-gradient-to-r from-primary-50 to-accent-50 p-4">
+                  <div className="text-sm font-semibold text-slate-800">ניתוח AI</div>
+                  <div className="mt-2 space-y-2">
+                    {aiResult.topTopicsHe.slice(0, 6).map((x, idx) => (
+                      <div key={idx} className="rounded-xl bg-white/80 backdrop-blur-sm p-3">
+                        <div className="text-sm font-medium text-slate-800">{x.topic}</div>
+                        <div className="mt-1 text-sm text-slate-700">{x.meaningHe}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </CardBody>
           </Card>
 

@@ -10,7 +10,7 @@ import {
   ErrorBanner,
   PageTitle,
   Select,
-  Skeleton,
+  LoadingLogo,
 } from '../components/common/FirstButton/ui';
 
 const SELECTED_DEVICE_KEY = 'besafe.selectedDeviceId';
@@ -114,12 +114,11 @@ export default function PopularContentPage() {
       </Card>
 
       {loading ? (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <Skeleton className="h-64" />
-          <Skeleton className="h-64" />
-          <Skeleton className="h-64" />
-          <Skeleton className="h-64" />
-        </div>
+        <Card>
+          <CardBody>
+            <LoadingLogo message="טוען תוכן פופולרי..." />
+          </CardBody>
+        </Card>
       ) : !hasDevice ? (
         <EmptyState title="לא נבחר מכשיר" subtitle="בחרו מכשיר כדי לראות תוכן פופולרי." />
       ) : !selectedDevice?.age ? (
