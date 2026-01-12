@@ -101,11 +101,26 @@ export default function WeeklyTrendsPage() {
       if (w.length > 0) {
         setAiLoading(true);
         try {
+          const weeklyPrompt = [
+            "you write concise, detailed, parent-friendly hebrew summaries about a child's online activity from the past week, detailing relevant topics, creators, and platforms they engaged with.",
+            "return ONLY valid JSON (no markdown, no extra text).",
+            "do not invent topics/creators/platforms not present in the facts.",
+            "avoid full URLs; use domains only if needed.",
+            "IMPORTANT: Keep all topic names and creator names in their original language. If you need to explain what they mean, put the Hebrew translation in parentheses after the original name.",
+            "Example: 'Minecraft (משחק בנייה)' or 'PewDiePie (יוטיובר משחקים)'.",
+            "DO NOT use the word parents, say YOU in plural in the explanation.",
+            "ALWAYS: provide conversation starters for parents to discuss online safety with their child.",
+            "be sensitive and avoid alarming language; focus on understanding and guidance.",
+            "make the summary medium-length, not too short or too long.",
+            "if one of the facts is a probleamatic content item or trend, POINT IT OUT (tell the parent which one it is clearly) and explain what it is and why it's concerning for parents.",
+            "Focus on weekly trends and patterns from the past week. Analyze what topics are trending up, down, or newly emerging. Provide insights about behavioral changes over the week."
+          ].join(" ");
+          
           const res = await api.ai.summary({ 
             history: w, 
             ageGroup: '12-14', 
             location: 'Israel',
-            prompt: 'Analyze weekly trends and patterns in this data. Focus on what topics are trending up, down, or newly emerging. Provide insights about behavioral changes over the week.' 
+            prompt: weeklyPrompt
           });
           setAiResult(res);
         } catch (err) {
@@ -203,6 +218,17 @@ export default function WeeklyTrendsPage() {
         </CardBody>
       </Card>
 
+      {aiResult?.shortSummaryHe && (
+        <Card>
+          <CardHeader title="סיכום שבועי" />
+          <CardBody>
+            <div className="rounded-2xl border border-primary-200 bg-gradient-to-r from-primary-50 to-accent-50 p-4">
+              <div className="text-sm text-slate-700">{aiResult.shortSummaryHe}</div>
+            </div>
+          </CardBody>
+        </Card>
+      )}
+
       {loading ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <Skeleton className="h-72" />
@@ -278,17 +304,6 @@ export default function WeeklyTrendsPage() {
             </CardBody>
           </Card>
         </div>
-      )}
-
-      {aiResult?.shortSummaryHe && (
-        <Card>
-          <CardHeader title="סיכום שבועי" />
-          <CardBody>
-            <div className="rounded-2xl border border-primary-200 bg-gradient-to-r from-primary-50 to-accent-50 p-4">
-              <div className="text-sm text-slate-700">{aiResult.shortSummaryHe}</div>
-            </div>
-          </CardBody>
-        </Card>
       )}
     </div>
   );

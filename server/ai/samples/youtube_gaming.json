@@ -1,9 +1,0 @@
-{
-  "history": [
-    { "label": "#minecraft", "platform": "youtube", "kind": "hashtag", "occurrenceCount": 8 },
-    { "label": "Minecraft gameplay", "platform": "youtube", "kind": "video_titles", "occurrenceCount": 5 },
-    { "label": "Dream", "platform": "youtube", "kind": "creators", "occurrenceCount": 3 }
-  ],
-  "ageGroup": "6-9",
-  "location": "Israel"
-}

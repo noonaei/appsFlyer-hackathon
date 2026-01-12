@@ -57,13 +57,13 @@ const KIND_MAP = {
   'subreddits': 'channel'
 };
 // Dynamic endpoint - will be loaded from server
-UPLOAD_ENDPOINT = detectServerEndpoint();
+let serverUrl = null;
 
 // Fetch config from server on startup
 async function loadConfig() {
   try {
     // Auto-detect server
-    const serverUrl = await detectServerEndpoint();
+    serverUrl = await detectServerEndpoint();
     CONFIG_ENDPOINT = `${serverUrl}/api/config`;
     
     console.log('[BG] Fetching config from:', CONFIG_ENDPOINT);
@@ -77,7 +77,7 @@ async function loadConfig() {
     }
     
     const config = await res.json();
-    UPLOAD_ENDPOINT = config.uploadEndpoint;
+    UPLOAD_ENDPOINT = config.uploadEndpoint || `${serverUrl}/api/signals/add`;
     console.log('[BG] Loaded endpoint from server:', UPLOAD_ENDPOINT);
     
     // Save for next time
@@ -88,7 +88,9 @@ async function loadConfig() {
   } catch (err) {
     console.error('[BG] Error loading config:', err);
     // Fallback
-    UPLOAD_ENDPOINT = 'http://localhost:5000/api/signals/add';
+    const fallbackServer = await detectServerEndpoint();
+    UPLOAD_ENDPOINT = `${fallbackServer}/api/signals/add`;
+    console.log('[BG] Using fallback endpoint:', UPLOAD_ENDPOINT);
   }
 }
 

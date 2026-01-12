@@ -56,7 +56,7 @@ export default function AppShell() {
           <div className="flex justify-center">
             <div className="float-animation">
               <div className="text-xl font-bold bg-gradient-to-r from-primary-600 to-accent-500 bg-clip-text text-transparent flex items-center gap-2">
-                <img src="/src/assets/mascot_logo.png" alt="KidConnect" className="w-12 h-12 object-contain flex-shrink-0" />
+                <img src="/src/assets/mascot_logo.png" alt="KidConnect" className="w-16 h-16 object-contain flex-shrink-0" />
                 <span className="sparkle-animation">🌸</span>
                 <span dir="ltr">KidConnect</span>
                 <span className="sparkle-animation">🌸</span>

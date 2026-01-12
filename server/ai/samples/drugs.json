@@ -1,9 +1,0 @@
-{
-  "history": [
-    { "label": "#music", "platform": "youtube", "kind": "hashtag", "occurrenceCount": 2 },
-    { "label": "weed", "platform": "tiktok", "kind": "video_titles", "occurrenceCount": 2 },
-    { "label": "stoned", "platform": "instagram", "kind": "hashtag", "occurrenceCount": 1 }
-  ],
-  "ageGroup": "16-18",
-  "location": "Israel"
-}

@@ -19,7 +19,7 @@ function getClient() {
 }
 
 
-async function generateSummaryLLM({ facts, outputSchemaHint }) {
+async function generateSummaryLLM({ facts, outputSchemaHint, customPrompt = null }) {
   const client = getClient();
   if (!client) return null; // allow fallback
 
@@ -28,7 +28,7 @@ async function generateSummaryLLM({ facts, outputSchemaHint }) {
   const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
   //system instructions + user prompt
-  const system = [
+  const system = customPrompt || [
     "you write concise, detailed, parent-friendly hebrew summaries about a child's online activity, detailing relevant topics, creators, and platforms they engaged with.",
     "return ONLY valid JSON (no markdown, no extra text).",
     "do not invent topics/creators/platforms not present in the facts.",
@@ -39,7 +39,7 @@ async function generateSummaryLLM({ facts, outputSchemaHint }) {
     "ALWAYS: provide conversation starters for parents to discuss online safety with their child.",
     "be sensitive and avoid alarming language; focus on understanding and guidance.",
     "make the summary medium-length, not too short or too long.",
-    "IMPORTANT: if one of the facts is a probleamatic content item or trend, POINT IT OUT (tell the parent which one it is clearly) and explain what it is and why it's concerning for parents.",
+    "if one of the facts is a probleamatic content item or trend, POINT IT OUT (tell the parent which one it is clearly) and explain what it is and why it's concerning for parents.",
   ].join(" ");
 
   const user = { facts, outputSchemaHint };

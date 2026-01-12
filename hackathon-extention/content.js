@@ -3,7 +3,6 @@
 // ================================
 
 console.log('[EXT] CONTENT SCRIPT LOADED');
-document.body.style.border = '5px solid red';
 
 const KIND_MAP = {
   video_titles: 'video_titles',
@@ -36,25 +35,38 @@ const signalBatches = {
 // Send batched signals to background every 5 seconds
 setInterval(() => {
   const timestamp = new Date().toISOString();
+  console.log('[EXT] Checking for signals to send...');
 
   for (const [platform, kinds] of Object.entries(signalBatches)) {
     for (const [kind, labelSet] of Object.entries(kinds)) {
       if (!labelSet || labelSet.size === 0) continue;
 
-      if (!chrome?.runtime?.sendMessage) {
-        console.warn('[EXT] Chrome runtime not available, skipping signal batch');
-        continue;
-      }
+      console.log(`[EXT] Sending ${labelSet.size} signals for ${platform}/${kind}`);
 
-      chrome.runtime.sendMessage({
-        type: 'signal_batch',
-        payload: {
-          platform,
-          kind,
-          labels: Array.from(labelSet),
-          timestamp
+      try {
+        if (!chrome?.runtime?.sendMessage) {
+          console.warn('[EXT] Chrome runtime not available, skipping signal batch');
+          continue;
         }
-      });
+
+        chrome.runtime.sendMessage({
+          type: 'signal_batch',
+          payload: {
+            platform,
+            kind,
+            labels: Array.from(labelSet),
+            timestamp
+          }
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.warn('[EXT] Message send failed:', chrome.runtime.lastError.message);
+          } else {
+            console.log('[EXT] Signal batch sent successfully:', response);
+          }
+        });
+      } catch (error) {
+        console.warn('[EXT] Error sending signal batch:', error);
+      }
 
       // IMPORTANT: clear only AFTER sending
       labelSet.clear();
@@ -75,6 +87,7 @@ function addSignal(platform, kind, labels) {
   }
 
   const arr = Array.isArray(labels) ? labels : [labels];
+  console.log(`[EXT] Adding ${arr.length} signals for ${platform}/${normalizedKind}:`, arr);
   arr.forEach(l => l && signalBatches[platform][normalizedKind].add(l));
 }
 

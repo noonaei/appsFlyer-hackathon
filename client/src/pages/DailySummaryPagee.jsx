@@ -184,10 +184,26 @@ export default function DailySummaryPage() {
     setAiLoading(true);
     setAiResult(null);
     try {
+      const dailyPrompt = [
+        "you write concise, detailed, parent-friendly hebrew summaries about a child's online activity from today/the past 24 hours, detailing relevant topics, creators, and platforms they engaged with.",
+        "return ONLY valid JSON (no markdown, no extra text).",
+        "do not invent topics/creators/platforms not present in the facts.",
+        "avoid full URLs; use domains only if needed.",
+        "IMPORTANT: Keep all topic names and creator names in their original language. If you need to explain what they mean, put the Hebrew translation in parentheses after the original name.",
+        "Example: 'Minecraft (משחק בנייה)' or 'PewDiePie (יוטיובר משחקים)'.",
+        "DO NOT use the word parents, say YOU in plural in the explanation.",
+        "ALWAYS: provide conversation starters for parents to discuss online safety with their child.",
+        "be sensitive and avoid alarming language; focus on understanding and guidance.",
+        "make the summary medium-length, not too short or too long.",
+        "if one of the facts is a probleamatic content item or trend, POINT IT OUT (tell the parent which one it is clearly) and explain what it is and why it's concerning for parents.",
+        "Focus on today's activity and what happened in the past 24 hours."
+      ].join(" ");
+      
       const res = await api.ai.summary({
         history: filtered,
         ageGroup,
         location,
+        prompt: dailyPrompt
       });
       setAiResult(res);
     } catch (err) {
@@ -243,9 +259,8 @@ export default function DailySummaryPage() {
               hint="מסנן פריטים עם סיגנל נמוך."
             />
 
-            <div className="flex items-end">
+            <div className="flex items-start justify-start">
               <Button
-                className="w-full"
                 onClick={runAi}
                 disabled={!hasDevice || !hasData || aiLoading}
               >
@@ -347,20 +362,6 @@ export default function DailySummaryPage() {
                   </div>
                 ))}
               </div>
-
-              {aiResult?.topTopicsHe?.length ? (
-                <div className="mt-4 rounded-2xl border border-primary-200 bg-gradient-to-r from-primary-50 to-accent-50 p-4">
-                  <div className="text-sm font-semibold text-slate-800">ניתוח AI</div>
-                  <div className="mt-2 space-y-2">
-                    {aiResult.topTopicsHe.slice(0, 6).map((x, idx) => (
-                      <div key={idx} className="rounded-xl bg-white/80 backdrop-blur-sm p-3">
-                        <div className="text-sm font-medium text-slate-800">{x.topic}</div>
-                        <div className="mt-1 text-sm text-slate-700">{x.meaningHe}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
             </CardBody>
           </Card>
 
