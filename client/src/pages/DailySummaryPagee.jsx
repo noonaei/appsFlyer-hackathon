@@ -153,8 +153,22 @@ export default function DailySummaryPage() {
   }, [filtered]);
 
   const topCreators = useMemo(() => {
-    const creators = filtered.filter((x) => x.kind === 'creators');
-    return sumBy(creators, (x) => x.label, (x) => x.occurrenceCount)
+    // Get explicit creators
+    const explicitCreators = filtered.filter((x) => x.kind === 'creators');
+    
+    // Also get YouTube channels that might be labeled as topics but are actually creators
+    const youtubeChannels = filtered.filter((x) => 
+      x.platform === 'youtube' && 
+      x.kind !== 'creators' && 
+      // Common patterns for YouTube channel names
+      (x.label.includes('Channel') || x.label.includes('TV') || x.label.includes('Official') || 
+       x.label.match(/^[A-Z][a-zA-Z0-9\s]+$/) || // Capitalized names
+       x.label.length > 3) // Avoid short topic-like labels
+    );
+    
+    const allCreators = [...explicitCreators, ...youtubeChannels];
+    
+    return sumBy(allCreators, (x) => x.label, (x) => x.occurrenceCount)
       .filter((x) => x.key && x.key !== 'unknown')
       .sort((a, b) => b.value - a.value)
       .slice(0, 12);
@@ -206,7 +220,7 @@ export default function DailySummaryPage() {
       <Card>
         <CardHeader title="מסננים" />
         <CardBody>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
             <Select label="מכשיר" value={deviceId} onChange={(e) => setDeviceId(e.target.value)}>
               {deviceOptions.length === 0 ? <option value="">אין מכשירים</option> : null}
               {deviceOptions.map((d) => (

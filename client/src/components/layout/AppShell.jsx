@@ -50,6 +50,23 @@ export default function AppShell() {
 
   return (
     <div className="min-h-screen">
+      {/* Top header with KidConnect title */}
+      <header className="bg-gradient-card backdrop-blur-sm shadow-soft border-b border-white/20">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex justify-center">
+            <div className="float-animation">
+              <div className="text-xl font-bold bg-gradient-to-r from-primary-600 to-accent-500 bg-clip-text text-transparent flex items-center gap-2">
+                <img src="/src/assets/mascot_logo.png" alt="KidConnect" className="w-12 h-12 object-contain flex-shrink-0" />
+                <span className="sparkle-animation">🌸</span>
+                <span dir="ltr">KidConnect</span>
+                <span className="sparkle-animation">🌸</span>
+              </div>
+              <div className="text-xs text-slate-600 text-center">לוח בקרה הורים</div>
+            </div>
+          </div>
+        </div>
+      </header>
+
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-6 py-8 lg:grid-cols-[1fr_280px]" dir="rtl">
         <main className="min-w-0">
           <HeaderButtons />
@@ -58,14 +75,12 @@ export default function AppShell() {
 
         <aside className="rounded-2xl bg-gradient-card backdrop-blur-sm shadow-soft border border-white/20 cute-hover">
           <div className="flex items-center justify-between border-b border-slate-200/50 px-6 py-5">
-            <div className="float-animation">
-              <div className="text-lg font-bold bg-gradient-to-r from-primary-600 to-accent-500 bg-clip-text text-transparent flex items-center gap-2">
-                <img src="/src/assets/mascot_logo.png" alt="KidConnect" className="w-10 h-10 object-contain flex-shrink-0" />
-                <span className="sparkle-animation">🌸</span>
-                <span dir="ltr">KidConnect</span>
-                <span className="sparkle-animation">🌸</span>
+            <div className="rounded-2xl bg-gradient-to-r from-primary-50 to-accent-50 border border-primary-100 px-4 py-3 cute-hover">
+              <div className="text-xs text-slate-600 flex items-center gap-1">
+                <span>👩👧👦</span>
+                מחובר כ
               </div>
-              <div className="text-xs text-slate-600">לוח בקרה הורים</div>
+              <div className="text-sm font-semibold text-slate-800">{parentName || 'הורה'}</div>
             </div>
             <Button variant="ghost" onClick={logout} className="text-xs px-3 py-1.5">
               יציאה
@@ -73,14 +88,6 @@ export default function AppShell() {
           </div>
 
           <div className="px-4 py-5">
-            <div className="mb-6 rounded-2xl bg-gradient-to-r from-primary-50 to-accent-50 border border-primary-100 px-4 py-3 cute-hover">
-              <div className="text-xs text-slate-600 flex items-center gap-1">
-                <span>👩‍👧‍👦</span>
-                מחובר כ
-              </div>
-              <div className="text-sm font-semibold text-slate-800">{parentName || 'הורה'}</div>
-            </div>
-
             <nav className="flex flex-col gap-2">
               <NavItem to="/devices" label="📱 מכשירים" />
               <NavItem to="/daily" label="📊 סיכום יומי" />

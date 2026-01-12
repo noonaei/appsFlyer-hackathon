@@ -71,8 +71,8 @@ const RULES = [
         ],
         weakKeywords: [
             "kill yourself", 
-            "kys",           
-            "תתאבד", "לך תתאבד"
+            "kys",  "bullying",
+            "תתאבד", "לך תתאבד","חרם", "בריונות"
         ]
     },
 
