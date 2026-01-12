@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import axios from 'axios';
 
 const baseURL = (import.meta.env.VITE_SERVER_API_URL || 'http://localhost:5000/').replace(/\/+$/, '');
@@ -74,3 +75,17 @@ const api = {
 };
 
 export default api;
+=======
+import axios from 'axios';
+const apiUrl = import.meta.env.VITE_SERVER_API_URL;
+
+// Create an instance of Axios with default configurations
+const axiosInstance = axios.create({
+  baseURL: apiUrl,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+export default axiosInstance;
+>>>>>>> Stashed changes
