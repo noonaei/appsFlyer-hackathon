@@ -97,11 +97,16 @@ export default function WeeklyTrendsPage() {
       setTodayItems(t);
       setWeekItems(w);
 
-      // Generate AI summary
-      if (t.length > 0) {
+      // Generate AI weekly trends summary
+      if (w.length > 0) {
         setAiLoading(true);
         try {
-          const res = await api.ai.summary({ history: t, ageGroup: '12-14', location: 'Israel' });
+          const res = await api.ai.summary({ 
+            history: w, 
+            ageGroup: '12-14', 
+            location: 'Israel',
+            prompt: 'Analyze weekly trends and patterns in this data. Focus on what topics are trending up, down, or newly emerging. Provide insights about behavioral changes over the week.' 
+          });
           setAiResult(res);
         } catch (err) {
           const msg = err?.response?.data?.error || err?.message || 'AI summary failed';
@@ -236,7 +241,7 @@ export default function WeeklyTrendsPage() {
             <CardBody>
               <div className="flex flex-col gap-2">
                 {trends.down.length === 0 ? (
-                  <div className="text-sm text-slate-600">No meaningful decreases detected.</div>
+                  <div className="text-sm text-slate-600">לא זוהו ירידות משמעותיות.</div>
                 ) : trends.down.map((r) => (
                   <div key={r.label} className="rounded-xl border border-slate-200 bg-white px-3 py-2">
                     <div className="flex items-center justify-between gap-2">
@@ -257,7 +262,7 @@ export default function WeeklyTrendsPage() {
             <CardBody>
               <div className="flex flex-col gap-2">
                 {trends.newly.length === 0 ? (
-                  <div className="text-sm text-slate-600">No new topics detected.</div>
+                  <div className="text-sm text-slate-600">לא זוהו נושאים חדשים.</div>
                 ) : trends.newly.map((r) => (
                   <div key={r.label} className="rounded-xl border border-slate-200 bg-white px-3 py-2">
                     <div className="flex items-center justify-between gap-2">

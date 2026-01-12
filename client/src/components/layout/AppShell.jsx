@@ -1,6 +1,8 @@
 import { NavLink, Outlet, useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../common/FirstButton/ui';
+import backBtn from '../../assets/backBtn.png';
+import homeBtn from '../../assets/homeBtn.png';
 
 function NavItem({ to, label }) {
   return (
@@ -30,14 +32,14 @@ function HeaderButtons() {
         onClick={() => navigate(-1)}
         className="text-xs px-3 py-2"
       >
-        <img src="/backBtn.png" alt="חזור" className="w-4 h-4" />
+        <img src={backBtn} alt="חזור" className="w-4 h-4" />
       </Button>
       <Button 
         variant="ghost" 
         onClick={() => navigate('/devices')}
         className="text-xs px-3 py-2"
       >
-        <img src="/homeBtn.png" alt="בית" className="w-4 h-4" />
+        <img src={homeBtn} alt="בית" className="w-4 h-4" />
       </Button>
     </div>
   );
@@ -58,9 +60,9 @@ export default function AppShell() {
           <div className="flex items-center justify-between border-b border-slate-200/50 px-6 py-5">
             <div className="float-animation">
               <div className="text-lg font-bold bg-gradient-to-r from-primary-600 to-accent-500 bg-clip-text text-transparent flex items-center gap-2">
-                <img src="/src/assets/mascot_logo.png" alt="Kid Connect" className="w-10 h-10 object-contain flex-shrink-0" />
+                <img src="/src/assets/mascot_logo.png" alt="KidConnect" className="w-10 h-10 object-contain flex-shrink-0" />
                 <span className="sparkle-animation">🌸</span>
-                <span dir="ltr">Kid Connect</span>
+                <span dir="ltr">KidConnect</span>
                 <span className="sparkle-animation">🌸</span>
               </div>
               <div className="text-xs text-slate-600">לוח בקרה הורים</div>
@@ -93,7 +95,7 @@ export default function AppShell() {
       
       <footer className="bg-white/10 backdrop-blur-sm border-t border-white/20 py-4 mt-8">
         <div className="max-w-7xl mx-auto px-6 text-center text-xs text-slate-500 space-y-2">
-          <div>© 2024 Kid Connect - צוות הפיתוח: נוגה נפנה וציפי</div>
+          <div>© 2026 KidConnect - צוות הפיתוח: נוגה נפנה ושני</div>
           <div>
             <button 
               onClick={() => window.open('/privacy', '_blank')} 

@@ -178,7 +178,7 @@ export default function AlertsPage() {
               <Card key={id}>
                 <CardHeader
                   title={a?.item || a?.label || 'Alert'}
-                  subtitle={a?.explanationHe || a?.shortExplanation || a?.explanation || ''}
+                  subtitle={a?.explanation || a?.explanationHe || a?.shortExplanation || ''}
                   right={<InlinePill tone={severityTone(a?.severity)}>{a?.severity || 'unknown'}</InlinePill>}
                 />
                 <CardBody>
@@ -199,12 +199,12 @@ export default function AlertsPage() {
                           
                           <div>
                             <div className="text-sm font-semibold text-slate-900 mb-2">הסבר</div>
-                            <div className="text-sm text-slate-700">{a?.explanationHe || a?.explanation || 'אין הסבר זמין'}</div>
+                            <div className="text-sm text-slate-700">{a?.explanation || a?.explanationHe || 'אין הסבר זמין'}</div>
                           </div>
                           
                           <div>
                             <div className="text-sm font-semibold text-slate-900 mb-2">פעולה מומלצת</div>
-                            <div className="text-sm text-slate-700">{a?.suggestedActionHe || a?.action || 'אין המלצה זמינה'}</div>
+                            <div className="text-sm text-slate-700">{a?.suggestedAction || a?.suggestedActionHe || a?.action || 'אין המלצה זמינה'}</div>
                           </div>
                         </div>
                       </div>

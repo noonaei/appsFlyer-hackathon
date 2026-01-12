@@ -153,8 +153,8 @@ export default function DailySummaryPage() {
   }, [filtered]);
 
   const topCreators = useMemo(() => {
-    const creators = filtered.filter((x) => x.kind === 'creators' || x.creator);
-    return sumBy(creators, (x) => x.creator || x.label, (x) => x.occurrenceCount)
+    const creators = filtered.filter((x) => x.kind === 'creators');
+    return sumBy(creators, (x) => x.label, (x) => x.occurrenceCount)
       .filter((x) => x.key && x.key !== 'unknown')
       .sort((a, b) => b.value - a.value)
       .slice(0, 12);
@@ -249,6 +249,37 @@ export default function DailySummaryPage() {
         </CardBody>
       </Card>
 
+      {aiResult?.shortSummaryHe && (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <Card>
+            <CardHeader title="סיכום AI" />
+            <CardBody>
+              <div className="rounded-2xl border border-primary-200 bg-gradient-to-r from-primary-50 to-accent-50 p-4">
+                <div className="text-sm text-slate-700">{aiResult.shortSummaryHe}</div>
+              </div>
+            </CardBody>
+          </Card>
+          
+          <Card>
+            <CardHeader title="ניתוח AI" />
+            <CardBody>
+              {aiResult?.topTopicsHe?.length ? (
+                <div className="space-y-2">
+                  {aiResult.topTopicsHe.slice(0, 3).map((x, idx) => (
+                    <div key={idx} className="rounded-xl bg-gradient-to-r from-primary-50 to-accent-50 p-3">
+                      <div className="text-sm font-medium text-slate-800">{x.topic}</div>
+                      <div className="mt-1 text-sm text-slate-700">{x.meaningHe}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-slate-600">אין ניתוח זמין</div>
+              )}
+            </CardBody>
+          </Card>
+        </div>
+      )}
+
       {reportLoading ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Skeleton className="h-56" />
@@ -322,19 +353,30 @@ export default function DailySummaryPage() {
           <Card className="md:col-span-2">
             <CardHeader title="יוצרים מובילים" />
             <CardBody>
-              <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-                {topCreators.map((c) => (
-                  <div key={c.key} className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2">
-                    <div className="truncate text-sm font-medium text-slate-900">{c.key}</div>
-                    <InlinePill>{c.value}</InlinePill>
-                  </div>
-                ))}
-              </div>
+              {topCreators.length === 0 ? (
+                <div className="text-sm text-slate-600">אין יוצרים בפעילות היום</div>
+              ) : (
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                  {topCreators.map((c) => (
+                    <div key={c.key} className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2">
+                      <div className="truncate text-sm font-medium text-slate-900">{c.key}</div>
+                      <InlinePill>{c.value}</InlinePill>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-              {aiResult?.interestsHe?.whyItMatters ? (
+              {aiResult?.topCreatorsHe?.length ? (
                 <div className="mt-4 rounded-2xl border border-primary-200 bg-gradient-to-r from-primary-50 to-accent-50 p-4">
-                  <div className="text-sm font-semibold text-slate-800">סיכום תחומי עניין</div>
-                  <div className="mt-1 text-sm text-slate-700">{aiResult.interestsHe.whyItMatters}</div>
+                  <div className="text-sm font-semibold text-slate-800">ניתוח יוצרים</div>
+                  <div className="mt-2 space-y-2">
+                    {aiResult.topCreatorsHe.slice(0, 6).map((x, idx) => (
+                      <div key={idx} className="rounded-xl bg-white/80 backdrop-blur-sm p-3">
+                        <div className="text-sm font-medium text-slate-800">{x.name}</div>
+                        <div className="mt-1 text-sm text-slate-700">{x.whyHe}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ) : null}
             </CardBody>

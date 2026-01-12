@@ -99,13 +99,20 @@ async function buildSummary({ history, ageGroup = "unknown", location = "unknown
         "Return ONLY valid JSON with explanationHe and suggestedActionHe fields.",
         "Provide possible conversation starters for parents to discuss this with their child.",
         "DO NOT use the word parents, say YOU in plural in the explanation.",
+        "ALWAYS: provide conversation starters for parents to discuss online safety with their child.",
+        "be sensitive and avoid alarming language; focus on understanding and guidance.",
+        "make the summary medium-length, not too short or too long.",
       ].join(" ");
+      
+      console.log(`[AI] Processing alert: ${alert.item} (${alert.severity})`);
       
       const aiExplanation = await generateSummaryLLM({ 
         facts: { item: alert.item, severity: alert.severity, category: alert.category },
         outputSchemaHint: { explanationHe: "...", suggestedActionHe: "..." },
         customPrompt: alertPrompt 
       });
+      
+      console.log(`[AI] AI response for ${alert.item}:`, aiExplanation);
       
       enrichedAlerts.push({
         item: alert.item,
@@ -114,6 +121,7 @@ async function buildSummary({ history, ageGroup = "unknown", location = "unknown
         suggestedActionHe: aiExplanation?.suggestedActionHe || suggestedActionHe(alert.severity),
       });
     } catch (err) {
+      console.error(`[AI] Error processing alert ${alert.item}:`, err);
       // Fallback to templates if AI fails
       enrichedAlerts.push({
         item: alert.item,
