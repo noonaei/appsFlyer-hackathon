@@ -44,7 +44,8 @@ function normalizeHistoryPayload(payload) {
 
 function severityTone(sev) {
   const s = String(sev || '').toLowerCase();
-  if (s.includes('high') || s.includes('critical')) return 'high';
+  if (s.includes('critical')) return 'critical';
+  if (s.includes('high')) return 'high';
   if (s.includes('medium') || s.includes('moderate')) return 'medium';
   if (s.includes('low') || s.includes('info')) return 'low';
   return 'neutral';
@@ -93,6 +94,7 @@ export default function AlertsPage() {
 
       setAiLoading(true);
       try {
+        // Get normal summary
         const res = await api.ai.summary({ history, ageGroup: '12-14', location: 'Israel' });
         setAiResult(res);
       } catch (err) {
@@ -175,8 +177,8 @@ export default function AlertsPage() {
             return (
               <Card key={id}>
                 <CardHeader
-                  title={a?.label || 'Alert'}
-                  subtitle={a?.shortExplanation || a?.explanation || ''}
+                  title={a?.item || a?.label || 'Alert'}
+                  subtitle={a?.explanationHe || a?.shortExplanation || a?.explanation || ''}
                   right={<InlinePill tone={severityTone(a?.severity)}>{a?.severity || 'unknown'}</InlinePill>}
                 />
                 <CardBody>
@@ -189,33 +191,22 @@ export default function AlertsPage() {
 
                     {isOpen ? (
                       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                        {a?.whatItIs ? (
-                          <>
-                            <div className="text-sm font-semibold text-slate-900">מה זה</div>
-                            <div className="mt-1 text-sm text-slate-700">{a.whatItIs}</div>
-                          </>
-                        ) : null}
-
-                        {a?.whyRisky ? (
-                          <>
-                            <div className="mt-3 text-sm font-semibold text-slate-900">למה זה עלול להיות מסוכן</div>
-                            <div className="mt-1 text-sm text-slate-700">{a.whyRisky}</div>
-                          </>
-                        ) : null}
-
-                        {a?.action ? (
-                          <>
-                            <div className="mt-3 text-sm font-semibold text-slate-900">פעולה מומלצת</div>
-                            <div className="mt-1 text-sm text-slate-700">{a.action}</div>
-                          </>
-                        ) : null}
-
-                        {/* Fallback for different schema shapes */}
-                        {!a?.whatItIs && !a?.whyRisky && !a?.action ? (
-                          <pre className="mt-2 overflow-auto rounded-xl bg-white p-3 text-xs text-slate-800">
-                            {JSON.stringify(a, null, 2)}
-                          </pre>
-                        ) : null}
+                        <div className="space-y-4">
+                          <div>
+                            <div className="text-sm font-semibold text-slate-900 mb-2">פריט מסוכן</div>
+                            <div className="text-sm text-slate-700">{a?.item || 'לא זוהה'}</div>
+                          </div>
+                          
+                          <div>
+                            <div className="text-sm font-semibold text-slate-900 mb-2">הסבר</div>
+                            <div className="text-sm text-slate-700">{a?.explanationHe || a?.explanation || 'אין הסבר זמין'}</div>
+                          </div>
+                          
+                          <div>
+                            <div className="text-sm font-semibold text-slate-900 mb-2">פעולה מומלצת</div>
+                            <div className="text-sm text-slate-700">{a?.suggestedActionHe || a?.action || 'אין המלצה זמינה'}</div>
+                          </div>
+                        </div>
                       </div>
                     ) : null}
                   </div>

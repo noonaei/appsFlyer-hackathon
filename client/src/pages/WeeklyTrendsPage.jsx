@@ -91,8 +91,8 @@ export default function WeeklyTrendsPage() {
         api.signals.last5days({ deviceId }),
       ]);
 
-      const t = normalizeHistoryPayload(today).filter((x) => x.kind !== 'creators');
-      const w = normalizeHistoryPayload(last5).filter((x) => x.kind !== 'creators');
+      const t = normalizeHistoryPayload(today);
+      const w = normalizeHistoryPayload(last5);
 
       setTodayItems(t);
       setWeekItems(w);

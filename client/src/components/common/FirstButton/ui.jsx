@@ -95,9 +95,10 @@ export function Select({ label, className = '', children, ...props }) {
 export function InlinePill({ children, tone = 'neutral' }) {
   const tones = {
     neutral: 'bg-slate-100/80 text-slate-700 border border-slate-200',
-    low: 'bg-emerald-50/80 text-emerald-700 border border-emerald-200',
+    low: 'bg-yellow-50/80 text-yellow-800 border border-yellow-200',
     medium: 'bg-amber-50/80 text-amber-800 border border-amber-200',
-    high: 'bg-rose-50/80 text-rose-700 border border-rose-200',
+    high: 'bg-red-50/80 text-red-800 border border-red-200',
+    critical: 'bg-red-100/80 text-red-900 border border-red-300 font-semibold',
   };
   return (
     <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium backdrop-blur-sm ${tones[tone] || tones.neutral}`}>

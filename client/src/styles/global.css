@@ -13,7 +13,7 @@ html, body {
 body {
   margin: 0;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-  background: linear-gradient(135deg, rgba(243, 241, 255, 0.95) 0%, rgba(240, 249, 255, 0.95) 100%), url('../assets/background.jpeg');
+  background: linear-gradient(135deg, rgba(243, 241, 255, 0.50) 0%, rgba(240, 249, 255, 0.95) 100%), url('../assets/background.jpeg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -25,6 +25,7 @@ body {
 
 * {
   box-sizing: border-box;
+  border: none !important; /* Remove any red debug borders */
 }
 
 a {

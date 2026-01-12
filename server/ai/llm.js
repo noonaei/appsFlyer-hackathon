@@ -19,7 +19,7 @@ function getClient() {
 }
 
 
-async function generateSummaryLLM({ facts, outputSchemaHint }) {
+async function generateSummaryLLM({ facts, outputSchemaHint, customPrompt }) {
   const client = getClient();
   if (!client) return null; // allow fallback
 
@@ -28,7 +28,7 @@ async function generateSummaryLLM({ facts, outputSchemaHint }) {
   const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
   //system instructions + user prompt
-  const system = [
+  const system = customPrompt || [
     "you write concise, detailed, parent-friendly hebrew summaries about a child's online activity.",
     "return ONLY valid JSON (no markdown, no extra text).",
     "do not invent topics/creators/platforms not present in the facts.",

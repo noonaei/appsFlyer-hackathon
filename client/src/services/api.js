@@ -7,7 +7,7 @@ const axiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30_000,
+  timeout: 120_000,
 });
 
 let accessToken = null;
@@ -41,8 +41,8 @@ const api = {
 
   devices: {
     list: () => request('GET', '/api/devices'),
-    create: ({ name }) => request('POST', '/api/devices/create', { name }),
-    update: ({ deviceId, name }) => request('PUT', `/api/devices/${deviceId}`, { name }),
+    create: ({ name, age }) => request('POST', '/api/devices/create', { name, age }),
+    update: ({ deviceId, name, age }) => request('PUT', `/api/devices/${deviceId}`, { name, age }),
     remove: ({ deviceId }) => request('DELETE', `/api/devices/${deviceId}`),
     validateToken: ({ token }) => request('GET', `/api/devices/validate/${token}`),
   },
@@ -62,6 +62,14 @@ const api = {
         { history, ageGroup, location }
       );
     },
+    summaryWithPrompt: ({ history, ageGroup = '12-14', location = 'Israel', customPrompt }) => {
+      return request(
+        'POST',
+        '/api/ai/summary',
+        { history, ageGroup, location, customPrompt }
+      );
+    },
+    popular: ({ age }) => request('GET', `/api/ai/popular/${age}`),
   },
 };
 

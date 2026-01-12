@@ -41,6 +41,11 @@ setInterval(() => {
     for (const [kind, labelSet] of Object.entries(kinds)) {
       if (!labelSet || labelSet.size === 0) continue;
 
+      if (!chrome?.runtime?.sendMessage) {
+        console.warn('[EXT] Chrome runtime not available, skipping signal batch');
+        continue;
+      }
+
       chrome.runtime.sendMessage({
         type: 'signal_batch',
         payload: {
@@ -291,16 +296,22 @@ function handleInstagram() {
     let captionText = captionElement.innerText || '';
     const hashtags = extractHashtags(captionText);
     
+    // Extract creator/username from URL or page
+    const urlMatch = location.href.match(/instagram\.com\/([^/]+)/);
+    const creator = urlMatch ? urlMatch[1] : 'instagram';
+    
     if (hashtags.length > 0) {
       console.log('[EXT] Instagram: Found hashtags:', hashtags);
       hashtags.forEach(tag => {
         addSignal('instagram', 'Hashtags', tag);
       });
-      hasScanned = true;
-    } else {
-      console.log('[EXT] Instagram: No hashtags found, retrying...');
-      setTimeout(scanCaption, 500);
     }
+    
+    if (creator && creator !== 'p' && creator !== 'reel') {
+      addSignal('instagram', 'Creators', creator);
+    }
+    
+    hasScanned = true;
   };
 
   setTimeout(scanCaption, 1000);
@@ -334,7 +345,7 @@ function handleTikTok() {
         
         const percentWatched = videoElement.currentTime / videoDuration;
         
-        if (percentWatched >= 0.8) {
+        if (percentWatched >= 0.5) {
           let captionContainer = videoElement.parentElement;
           for (let i = 0; i < 3; i++) {
             captionContainer = captionContainer?.parentElement;
@@ -343,12 +354,20 @@ function handleTikTok() {
           if (captionContainer) {
             const fullText = captionContainer.innerText || '';
             const hashtags = extractHashtags(fullText);
+            
+            // Extract creator from TikTok URL
+            const urlMatch = location.href.match(/tiktok\.com\/@([^/]+)/);
+            const creator = urlMatch ? urlMatch[1] : 'tiktok';
 
             if (hashtags.length > 0) {
               console.log('[EXT] TikTok: Found hashtags:', hashtags);
               hashtags.forEach(tag => {
                 addSignal('tiktok', 'Hashtags', tag);
               });
+            }
+            
+            if (creator) {
+              addSignal('tiktok', 'Creators', creator);
             }
           }
 

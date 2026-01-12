@@ -30,14 +30,14 @@ function HeaderButtons() {
         onClick={() => navigate(-1)}
         className="text-xs px-3 py-2"
       >
-        ← חזור
+        <img src="/backBtn.png" alt="חזור" className="w-4 h-4" />
       </Button>
       <Button 
         variant="ghost" 
         onClick={() => navigate('/devices')}
         className="text-xs px-3 py-2"
       >
-        בית
+        <img src="/homeBtn.png" alt="בית" className="w-4 h-4" />
       </Button>
     </div>
   );
@@ -58,7 +58,7 @@ export default function AppShell() {
           <div className="flex items-center justify-between border-b border-slate-200/50 px-6 py-5">
             <div className="float-animation">
               <div className="text-lg font-bold bg-gradient-to-r from-primary-600 to-accent-500 bg-clip-text text-transparent flex items-center gap-2">
-                <img src="/src/assets/mascot_logo.png" alt="Kid Connect" className="w-10 h-10 object-contain" />
+                <img src="/src/assets/mascot_logo.png" alt="Kid Connect" className="w-10 h-10 object-contain flex-shrink-0" />
                 <span className="sparkle-animation">🌸</span>
                 <span dir="ltr">Kid Connect</span>
                 <span className="sparkle-animation">🌸</span>
@@ -84,6 +84,7 @@ export default function AppShell() {
               <NavItem to="/daily" label="📊 סיכום יומי" />
               <NavItem to="/alerts" label="🚨 התראות" />
               <NavItem to="/weekly" label="📈 מגמות שבועיות" />
+              <NavItem to="/popular" label="🔥 מה פופולרי?" />
               <NavItem to="/settings" label="⚙️ הגדרות" />
             </nav>
           </div>
@@ -92,7 +93,7 @@ export default function AppShell() {
       
       <footer className="bg-white/10 backdrop-blur-sm border-t border-white/20 py-4 mt-8">
         <div className="max-w-7xl mx-auto px-6 text-center text-xs text-slate-500 space-y-2">
-          <div>© 2024 Kid Connect - צוות הפיתוח: [שמות חברי הצוות]</div>
+          <div>© 2024 Kid Connect - צוות הפיתוח: נוגה נפנה וציפי</div>
           <div>
             <button 
               onClick={() => window.open('/privacy', '_blank')} 

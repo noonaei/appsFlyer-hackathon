@@ -9,6 +9,9 @@ const { hashKey, get: cacheGet, set: cacheSet } = require("./cache");
   const topics = new Map();   //key->{label, platform, count}
   const creators = new Map(); //key->{name, platform, count}
 
+  console.log("[AI] normalizeFromHistory input:", history.slice(0, 5));
+  console.log("[AI] total history items:", history.length);
+  
   //changed to match new aggregated signal schema
   for (const item of history) {
     const platform = item.platform || "unknown";
@@ -18,6 +21,15 @@ const { hashKey, get: cacheGet, set: cacheSet } = require("./cache");
 
     //kind==creators, new logic where the creators are in the label
     if (kind === "creators") {
+      // Special handling for Reddit, Instagram, TikTok: treat as topics unless username is available
+      if (platform === "reddit" || platform === "instagram" || platform === "tiktok") {
+        const topicKey = `${platform}::${label}`;
+        const t = topics.get(topicKey) || { label, platform, seconds: undefined, count: 0 };
+        t.count += weight;
+        topics.set(topicKey, t);
+        continue;
+      }
+      
       const creatorKey = `${platform}::${label}`;
       const c = creators.get(creatorKey) || { name: label, platform, seconds: undefined, count: 0 };
       c.count += weight;
@@ -35,6 +47,9 @@ const { hashKey, get: cacheGet, set: cacheSet } = require("./cache");
 
   const topTopics = [...topics.values()].sort((a, b) => b.count - a.count);
   const topCreators = [...creators.values()].sort((a, b) => b.count - a.count);
+
+  console.log("[AI] Final topTopics:", topTopics.slice(0, 5));
+  console.log("[AI] Final topCreators:", topCreators.slice(0, 5));
 
   return { topTopics, topCreators };
 }
@@ -66,23 +81,55 @@ function buildDeterministicOutput({ topTopics, topCreators, alerts, ageGroup, lo
 
 
 //updated inout to match new backend schema
-async function buildSummary({ history, ageGroup = "unknown", location = "unknown" }) {
+async function buildSummary({ history, ageGroup = "unknown", location = "unknown", deviceAge = null, customPrompt = null }) {
   const { topTopics, topCreators } = normalizeFromHistory(Array.isArray(history) ? history : []);
 
   //risk scoring
   const rawAlerts = scoreRisks({ topTopics, topCreators });
 
-  //enrich alerts into final contract fields
-  const alerts = rawAlerts.map((a) => ({
-    item: a.item,
-    severity: a.severity,
-    explanationHe: explainAlertHe(a.category, a.severity),
-    suggestedActionHe: suggestedActionHe(a.severity),
-  }));
+  //enrich alerts with AI-generated explanations
+  const enrichedAlerts = [];
+  for (const alert of rawAlerts) {
+    try {
+      const alertPrompt = [
+        `You found concerning content: "${alert.item}" (${alert.severity} risk)`,
+        "Explain in Hebrew what this content is and why it's concerning for parents.",
+        "Provide specific actionable advice for parents.",
+        "Be calm, informative, and constructive.",
+        "Return ONLY valid JSON with explanationHe and suggestedActionHe fields.",
+        "Provide possible conversation starters for parents to discuss this with their child.",
+        "DO NOT use the word parents, say YOU in plural in the explanation.",
+      ].join(" ");
+      
+      const aiExplanation = await generateSummaryLLM({ 
+        facts: { item: alert.item, severity: alert.severity, category: alert.category },
+        outputSchemaHint: { explanationHe: "...", suggestedActionHe: "..." },
+        customPrompt: alertPrompt 
+      });
+      
+      enrichedAlerts.push({
+        item: alert.item,
+        severity: alert.severity,
+        explanationHe: aiExplanation?.explanationHe || explainAlertHe(alert.category, alert.severity),
+        suggestedActionHe: aiExplanation?.suggestedActionHe || suggestedActionHe(alert.severity),
+      });
+    } catch (err) {
+      // Fallback to templates if AI fails
+      enrichedAlerts.push({
+        item: alert.item,
+        severity: alert.severity,
+        explanationHe: explainAlertHe(alert.category, alert.severity),
+        suggestedActionHe: suggestedActionHe(alert.severity),
+      });
+    }
+  }
+  
+  const alerts = enrichedAlerts;
 
-  //facts for LLM
+  //facts for LLM - use deviceAge if available, otherwise ageGroup
+  const effectiveAge = deviceAge || ageGroup;
   const facts = {
-    ageGroup,
+    ageGroup: effectiveAge,
     location,
     topTopics: topTopics.slice(0, 8),
     topCreators: topCreators.slice(0, 8),
@@ -111,7 +158,7 @@ async function buildSummary({ history, ageGroup = "unknown", location = "unknown
   };
 
   console.log("[AI] attempting LLM summary...");
-  const llmJson  = await generateSummaryLLM({ facts, outputSchemaHint });
+  const llmJson  = await generateSummaryLLM({ facts, outputSchemaHint, customPrompt });
 
   //use LLM output if valid
   if (llmJson) {
@@ -119,7 +166,7 @@ async function buildSummary({ history, ageGroup = "unknown", location = "unknown
     if (parsed.success) {
       // enforce meta we control (prevents weird outputs)
       parsed.data.meta.generatedAt = Date.now();
-      parsed.data.meta.ageGroup = ageGroup;
+      parsed.data.meta.ageGroup = effectiveAge;
       parsed.data.meta.location = location;
       // cache the validated output
       cacheSet(cacheKey, parsed.data);
@@ -127,7 +174,7 @@ async function buildSummary({ history, ageGroup = "unknown", location = "unknown
     }
   }
   //fallback to deterministic
-  const fallback = buildDeterministicOutput({ topTopics, topCreators, alerts, ageGroup, location });
+  const fallback = buildDeterministicOutput({ topTopics, topCreators, alerts, ageGroup: effectiveAge, location });
   cacheSet(cacheKey, fallback);
   return fallback;
 }

@@ -10,6 +10,7 @@ import DevicesPage from './pages/DevicesPage';
 import DailySummaryPage from './pages/DailySummaryPagee';
 import AlertsPage from './pages/AlertsPage';
 import WeeklyTrendsPage from './pages/WeeklyTrendsPage';
+import PopularContentPage from './pages/PopularContentPage';
 import PrivacyPage from './pages/PrivacyPage';
 import SettingsPage from './pages/SettingsPage';
 
@@ -39,6 +40,7 @@ export default function App() {
               <Route path="/daily" element={<DailySummaryPage />} />
               <Route path="/alerts" element={<AlertsPage />} />
               <Route path="/weekly" element={<WeeklyTrendsPage />} />
+              <Route path="/popular" element={<PopularContentPage />} />
               <Route path="/privacy" element={<PrivacyPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="*" element={<NotFound />} />

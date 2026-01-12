@@ -24,6 +24,7 @@ export default function SettingsPage() {
 
   const [editingDevice, setEditingDevice] = useState(null);
   const [deviceNameInput, setDeviceNameInput] = useState('');
+  const [deviceAgeInput, setDeviceAgeInput] = useState('');
   const [isUpdatingDevice, setIsUpdatingDevice] = useState(false);
   const [deviceError, setDeviceError] = useState('');
 
@@ -48,15 +49,22 @@ export default function SettingsPage() {
   async function updateDeviceName(deviceId) {
     if (!deviceNameInput.trim()) return;
     
+    const updateData = { name: deviceNameInput.trim() };
+    const age = parseInt(deviceAgeInput);
+    if (age && age >= 1 && age <= 18) {
+      updateData.age = age;
+    }
+    
     setDeviceError('');
     setIsUpdatingDevice(true);
     try {
-      await api.devices.update({ deviceId, name: deviceNameInput.trim() });
+      await api.devices.update({ deviceId, ...updateData });
       setEditingDevice(null);
       setDeviceNameInput('');
+      setDeviceAgeInput('');
       await reload();
     } catch (err) {
-      const msg = err?.response?.data?.error || err?.message || 'Failed to update device name';
+      const msg = err?.response?.data?.error || err?.message || 'Failed to update device';
       setDeviceError(msg);
     } finally {
       setIsUpdatingDevice(false);
@@ -84,12 +92,14 @@ export default function SettingsPage() {
   function startEditingDevice(device) {
     setEditingDevice(device._id || device.id);
     setDeviceNameInput(device.name || '');
+    setDeviceAgeInput(String(device.age || ''));
     setDeviceError('');
   }
 
   function cancelEditingDevice() {
     setEditingDevice(null);
     setDeviceNameInput('');
+    setDeviceAgeInput('');
     setDeviceError('');
   }
 
@@ -155,13 +165,24 @@ export default function SettingsPage() {
                     className="rounded-2xl border border-slate-200 bg-white/80 backdrop-blur-sm px-4 py-3"
                   >
                     {isEditing ? (
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                        <Input
-                          label="שם מכשיר"
-                          value={deviceNameInput}
-                          onChange={(e) => setDeviceNameInput(e.target.value)}
-                          disabled={isUpdatingDevice}
-                        />
+                      <div className="flex flex-col gap-3">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          <Input
+                            label="שם מכשיר"
+                            value={deviceNameInput}
+                            onChange={(e) => setDeviceNameInput(e.target.value)}
+                            disabled={isUpdatingDevice}
+                          />
+                          <Input
+                            label="גיל"
+                            type="number"
+                            min="1"
+                            max="18"
+                            value={deviceAgeInput}
+                            onChange={(e) => setDeviceAgeInput(e.target.value)}
+                            disabled={isUpdatingDevice}
+                          />
+                        </div>
                         <div className="flex gap-2">
                           <Button
                             onClick={() => updateDeviceName(deviceId)}
@@ -180,8 +201,13 @@ export default function SettingsPage() {
                       </div>
                     ) : (
                       <div className="flex items-center justify-between">
-                        <div className="text-sm font-medium text-slate-800">
-                          {device.name || 'מכשיר ללא שם'}
+                        <div>
+                          <div className="text-sm font-medium text-slate-800">
+                            {device.name || 'מכשיר ללא שם'}
+                          </div>
+                          <div className="text-xs text-slate-600">
+                            גיל: {device.age || 'לא צוין'}
+                          </div>
                         </div>
                         <Button
                           variant="secondary"

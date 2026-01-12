@@ -2,6 +2,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 
 const { buildSummary } = require("../ai/summarize");
+const { getPopularContent } = require("../ai/popularContent");
 const { AIInputSchema, AIOutputSchema } = require("../ai/schema");
 
 //creating POST endpoint - receiving JSON from client and calling summary builder (the AI)
@@ -40,6 +41,7 @@ router.post("/summary", async (req, res) => {
     //if provided 
     const ageGroup = (!Array.isArray(body) && body.ageGroup) ? body.ageGroup : "unknown";
     const location = (!Array.isArray(body) && body.location) ? body.location : "unknown";
+    const customPrompt = (!Array.isArray(body) && body.customPrompt) ? body.customPrompt : null;
 
     //min log
     console.log("HIT /api/ai/summary", {
@@ -50,7 +52,7 @@ router.post("/summary", async (req, res) => {
 
 
     //3)generating summary
-    const result = await buildSummary({ history, ageGroup, location });
+    const result = await buildSummary({ history, ageGroup, location, customPrompt });
 
     //4)validating output JSON against schema
     const parsedOut = AIOutputSchema.safeParse(result);
@@ -87,6 +89,23 @@ router.post("/summary", async (req, res) => {
   } catch (err) {
     console.error("AI summary error:", err);
     return res.status(500).json({ error: "Failed to generate AI summary" });
+  }
+});
+
+router.get("/popular/:age", async (req, res) => {
+  try {
+    const age = parseInt(req.params.age);
+    if (!age || age < 1 || age > 18) {
+      return res.status(400).json({ error: "Age must be between 1-18" });
+    }
+
+    console.log(`HIT /api/ai/popular/${age}`);
+    
+    const result = await getPopularContent(age);
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error("Popular content error:", err);
+    return res.status(500).json({ error: "Failed to get popular content" });
   }
 });
 

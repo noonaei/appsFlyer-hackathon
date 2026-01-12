@@ -31,7 +31,7 @@ export default function SignupPage() {
     <div className="min-h-screen flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8 float-animation">
-          <img src="/src/assets/mascot_logo.png" alt="Kid Connect" className="w-32 h-32 mx-auto mb-4 object-contain" />
+          <img src="/src/assets/mascot_logo.png" alt="Kid Connect" className="w-32 h-32 mx-auto mb-4 object-contain flex-shrink-0" />
           <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-accent-500 bg-clip-text text-transparent" dir="ltr">
             Kid Connect
           </h1>

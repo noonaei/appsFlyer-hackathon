@@ -32,6 +32,7 @@ const eventSignalSchema = new mongoose.Schema({
 
 eventSignalSchema.index({ deviceId: 1, createdAt: -1 });
 
+// TTL index - signals expire after 30 days
 eventSignalSchema.index({ createdAt: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 30 });
 
 module.exports = mongoose.model('EventSignal', eventSignalSchema);

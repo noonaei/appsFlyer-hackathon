@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import api from '../services/api';
 import { useDevices } from '../hooks/useDevices';
 import {
@@ -39,6 +39,7 @@ export default function DevicesPage() {
   const { devices, isLoading, error, reload } = useDevices();
 
   const [createName, setCreateName] = useState('');
+  const [createAge, setCreateAge] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState('');
   const [createdToken, setCreatedToken] = useState('');
@@ -47,18 +48,23 @@ export default function DevicesPage() {
   const [isDeletingId, setIsDeletingId] = useState('');
   const [deleteError, setDeleteError] = useState('');
 
-  const selectedDeviceId = useMemo(() => {
+  const [selectedDeviceId, setSelectedDeviceIdState] = useState(() => {
     try {
       return localStorage.getItem(SELECTED_DEVICE_KEY) || '';
     } catch {
       return '';
     }
-  }, []);
+  });
 
   function setSelectedDeviceId(id) {
     try {
-      if (!id) localStorage.removeItem(SELECTED_DEVICE_KEY);
-      else localStorage.setItem(SELECTED_DEVICE_KEY, id);
+      if (!id) {
+        localStorage.removeItem(SELECTED_DEVICE_KEY);
+        setSelectedDeviceIdState('');
+      } else {
+        localStorage.setItem(SELECTED_DEVICE_KEY, id);
+        setSelectedDeviceIdState(id);
+      }
     } catch {
       // ignore
     }
@@ -71,18 +77,24 @@ export default function DevicesPage() {
     setCreatedDeviceId('');
 
     const name = createName.trim();
+    const age = parseInt(createAge);
     if (!name) {
       setCreateError('Device name is required.');
+      return;
+    }
+    if (!age || age < 1 || age > 18) {
+      setCreateError('Age is required and must be between 1-18.');
       return;
     }
 
     setIsCreating(true);
     try {
-      const res = await api.devices.create({ name });
+      const res = await api.devices.create({ name, age });
       // backend returns: { deviceToken, deviceId }
       setCreatedToken(res?.deviceToken || '');
       setCreatedDeviceId(res?.deviceId || '');
       setCreateName('');
+      setCreateAge('');
       await reload();
 
       // auto-select newly created device when possible
@@ -129,12 +141,22 @@ export default function DevicesPage() {
       <Card>
         <CardHeader title="הוספת מכשיר" subtitle="זה יוצר אסימון מכשיר לצימוד." />
         <CardBody>
-          <form onSubmit={onCreateDevice} className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+          <form onSubmit={onCreateDevice} className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
             <Input
               label="שם המכשיר"
               placeholder="למשל, מחשב ילד"
               value={createName}
               onChange={(e) => setCreateName(e.target.value)}
+              disabled={isCreating}
+            />
+            <Input
+              label="גיל"
+              type="number"
+              min="1"
+              max="18"
+              placeholder="גיל"
+              value={createAge}
+              onChange={(e) => setCreateAge(e.target.value)}
               disabled={isCreating}
             />
             <Button type="submit" disabled={isCreating}>
@@ -230,7 +252,10 @@ export default function DevicesPage() {
                           {isSelected ? <InlinePill>נבחר</InlinePill> : null}
                         </div>
 
-                        <div className="mt-1 grid grid-cols-1 gap-1 text-xs text-slate-600 sm:grid-cols-2">
+                        <div className="mt-1 grid grid-cols-1 gap-1 text-xs text-slate-600 sm:grid-cols-3">
+                          <div>
+                            גיל: <span className="text-slate-700">{d?.age || 'לא צוין'}</span>
+                          </div>
                           <div>
                             נוצר: <span className="text-slate-700">{formatDateTime(d?.createdAt)}</span>
                           </div>
