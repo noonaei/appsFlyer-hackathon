@@ -212,7 +212,7 @@ function handleYouTube() {
 
       const percentWatched = video.currentTime / videoDuration;
       
-      if (percentWatched >= 0.5 && !hasExtracted) {
+      if (percentWatched >= 0.25 && !hasExtracted) {
         console.log('[EXT] YouTube: 50%+ watched');
         
         const rawTitle = getVideoTitle();

@@ -5,9 +5,9 @@ import { getDeviceToken } from './storage.js';
 console.log('[BG] ========== SERVICE WORKER STARTED ==========');
 console.log('[BG] Timestamp:', new Date().toISOString());
 
-const UPLOAD_ENDPOINT = process.env.PORT;
-const BATCH_SIZE = 20;
-const UPLOAD_INTERVAL_MS = 15_000; // 15 seconds
+const UPLOAD_ENDPOINT = "http://localhost:5000/api/signals/add";
+const BATCH_SIZE = 100;
+const UPLOAD_INTERVAL_MS = 30_000; // 15 seconds
 
 // Initialize queueDirty flag
 chrome.storage.local.get('queueDirty', (result) => {
@@ -36,14 +36,14 @@ async function uploadBatch() {
 
     console.log('[BG] Processing batch of', batch.length, 'signals');
 
-    // Group by: deviceId + platform + kind
+    // Group by: deviceToken + platform + kind
     const grouped = {};
     batch.forEach(signal => {
       const key = `${signal.deviceToken}|${signal.platform}|${signal.kind}`;
       
       if (!grouped[key]) {
        grouped[key] = {
-         deviceId: signal.deviceToken,
+         deviceToken: signal.deviceToken,
          platform: signal.platform,
          kind: signal.kind,
          labels: [],
@@ -60,7 +60,8 @@ async function uploadBatch() {
     let totalSent = 0;
     for (const [key, payload] of Object.entries(grouped)) {
       console.log('[BG] Sending request:', payload.platform, payload.kind, `(${payload.labels.length} items)`);
-      
+      console.log('[BG!!!!!!!!!!] About to send this payload:', JSON.stringify(payload, null, 2));
+
       const res = await fetch(UPLOAD_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
