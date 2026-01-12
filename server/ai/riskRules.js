@@ -7,7 +7,7 @@ const RULES = [
         severity: "high",
         strongKeywords: [
             //english
-            "self harm", "suicide", "kill myself", "kms", "cutting", "thinspo", "pro-ana", "suicidal", "kys", "unalive", "unaliving", "weed","joint","smoking",
+            "self harm", "suicide", "kill myself", "kms", "cutting", "thinspo", "pro-ana", "suicidal", "kys", "unalive", "unaliving", "weed","joint","smoking", "smoke",
             //hebrew
             "אובדנות", "אובדני", "אובדנית", "התאבדות", "לפגוע בעצמי", "לחתוך", "פגיעה עצמית", "פרו-אנה", "טינספו" 
         ],
