@@ -33,6 +33,8 @@ async function generateSummaryLLM({ facts, outputSchemaHint }) {
     "return ONLY valid JSON (no markdown, no extra text).",
     "do not invent topics/creators/platforms not present in the facts.",
     "avoid full URLs; use domains only if needed.",
+    "IMPORTANT: Keep all topic names and creator names in their original language. If you need to explain what they mean, put the Hebrew translation in parentheses after the original name.",
+    "Example: 'Minecraft (משחק בנייה)' or 'PewDiePie (יוטיובר משחקים)'.",
   ].join(" ");
 
   const user = { facts, outputSchemaHint };

@@ -58,14 +58,28 @@ const getSignalsToday = async (req, res) => {
   const parentId = req.parent._id
 
   if (!mongoose.Types.ObjectId.isValid(deviceId)) {
-    return res.status(404).json({ error: 'No such device' })
+    return res.status(404).json({ error: 'Invalid device ID format' })
   }
+  
   const oneDayAgo = new Date()
   oneDayAgo.setHours(oneDayAgo.getHours() - 24)
 
   try {
     console.log("Checking device:", deviceId, "for parent:", parentId);
+    
+    // First check if device exists at all
+    const deviceExists = await Device.findById(deviceId)
+    console.log("Device exists:", !!deviceExists);
+    
+    if (!deviceExists) {
+      return res.status(404).json({ error: 'Device not found' })
+    }
+    
+    // Then check ownership
     const device = await Device.findOne({ _id: deviceId, parentId })
+    console.log("Device belongs to parent:", !!device);
+    console.log("Device parentId:", deviceExists.parentId, "Request parentId:", parentId);
+    
     if (!device) {
       return res.status(403).json({ error: 'Unauthorized access to this device' })
     }
@@ -92,6 +106,7 @@ const getSignalsToday = async (req, res) => {
 
     return res.status(200).json(history)
   } catch (error) {
+    console.error("Error in getSignalsToday:", error);
     return res.status(400).json({ error: error.message })
   }
 }
@@ -130,34 +145,61 @@ const saveSignals = async (req, res) => {
   const deviceId = req.device._id
 
   try {
-    // Accept either a single signal object or an array of signals
-    const incoming = Array.isArray(req.body) ? req.body : Array.isArray(req.body?.signals) ? req.body.signals : [req.body]; //fixed so it works with the extension
+     const { signals } = req.body || {};
 
-    // Map incoming signals to top-level EventSignal documents
-    const docs = incoming.map((s) => {
+    
+    if (!Array.isArray(signals) || signals.length === 0) {
+      return res.status(400).json({
+        error: "Invalid input. Expected { deviceToken, signals: [...] }"
+      });
+    }
+
+    //batch size limit 
+    const MAX_BATCH = 100;
+    if (signals.length > MAX_BATCH) {
+      return res.status(413).json({
+        error: `Batch too large. Max ${MAX_BATCH} signals per request.`
+      });
+    }
+
+    const docs = signals.map((s) => {
       const labels = Array.isArray(s?.labels)
         ? s.labels
-        : (s?.label ? [s.label] : [])
+        : (s?.label ? [s.label] : []);
+
+      //basic sanitization (prevents huge payloads / junk)
+      const safeLabels = labels
+        .filter(Boolean)
+        .map(x => String(x).slice(0, 200)) //cap each label length
+        .slice(0, 50);                    //cap number of labels per signal group
 
       return {
         deviceId,
         platform: s?.platform,
         kind: s?.kind,
-        labels,
-        timestamp: s?.timestamp ? new Date(s.timestamp) : new Date()
+        labels: safeLabels,
+        timestamp: s?.timestamp ? new Date(s.timestamp) : new Date(),
+      };
+    });
+
+    //reject if any doc is missing required fields
+    for (const d of docs) {
+      if (!d.platform || !d.kind || !Array.isArray(d.labels) || d.labels.length === 0) {
+        return res.status(400).json({
+          error: "Invalid signal item. Each must include platform, kind, and labels[]"
+        });
       }
-    })
-    
-    console.log("[signals/add] deviceId:", deviceId);
-    console.log("[signals/add] incoming sample:", incoming?.[0]);
-    console.log("[signals/add] incoming count:", incoming?.length);
+    }
 
-    const inserted = await EventSignal.insertMany(docs)
+    const inserted = await EventSignal.insertMany(docs, { ordered: false });
 
-    return res.status(201).json(inserted)
+    return res.status(201).json({
+      insertedCount: inserted.length,
+      serverTime: new Date().toISOString()
+    });
+
   } catch (error) {
-
-    return res.status(400).json({ error: error.message })
+    return res.status(400).json({ error: error.message });
   }
 }
 module.exports = {

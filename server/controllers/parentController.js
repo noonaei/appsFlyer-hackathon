@@ -43,4 +43,48 @@ const loginParent = async (req, res) => {
     }
 }
 
-module.exports = { signupParent, loginParent }
+const updateParent = async (req, res) => {
+    const { name } = req.body
+    const parentId = req.parent._id
+    
+    try {
+        const parent = await Parent.findByIdAndUpdate(
+            parentId,
+            { name },
+            { new: true, runValidators: true }
+        )
+        
+        if (!parent) {
+            return res.status(404).json({ error: 'Parent not found' })
+        }
+        
+        return res.status(200).json({ message: 'Parent updated successfully', name: parent.name })
+    } catch (error) {
+        return res.status(400).json({ error: error.message })
+    }
+}
+
+const deleteParent = async (req, res) => {
+    const parentId = req.parent._id
+    
+    try {
+        const Device = require('../models/Device')
+        const EventSignal = require('../models/EventSignal')
+        
+        // Delete all devices and their signals
+        const devices = await Device.find({ parentId })
+        const deviceIds = devices.map(d => d._id)
+        
+        await EventSignal.deleteMany({ deviceId: { $in: deviceIds } })
+        await Device.deleteMany({ parentId })
+        
+        // Delete parent
+        await Parent.findByIdAndDelete(parentId)
+        
+        return res.status(200).json({ message: 'Account deleted successfully' })
+    } catch (error) {
+        return res.status(400).json({ error: error.message })
+    }
+}
+
+module.exports = { signupParent, loginParent, updateParent, deleteParent }

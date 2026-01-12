@@ -23,6 +23,7 @@ const SignalKindEnum = z.enum([
   "video_titles",
   "creators",
   "url_visit",
+  "channel",
 ]);
 
 //redited to match backend schema

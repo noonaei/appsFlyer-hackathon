@@ -95,4 +95,30 @@ const validateDeviceToken = async (req, res) => {
     }
 }
 
-module.exports = { getDevices, createDevice, deleteDevice, validateDeviceToken }
+const updateDevice = async (req, res) => {
+    const { deviceId } = req.params
+    const { name } = req.body
+    const parentId = req.parent._id
+    
+    if (!mongoose.Types.ObjectId.isValid(deviceId)) {
+        return res.status(404).json({ error: 'No such device' })
+    }
+    
+    try {
+        const device = await Device.findOneAndUpdate(
+            { _id: deviceId, parentId: parentId },
+            { name },
+            { new: true, runValidators: true }
+        )
+        
+        if (!device) {
+            return res.status(404).json({ error: 'No such device for this parent' })
+        }
+        
+        return res.status(200).json({ message: 'Device updated successfully', device })
+    } catch (error) {
+        return res.status(400).json({ error: error.message })
+    }
+}
+
+module.exports = { getDevices, createDevice, updateDevice, deleteDevice, validateDeviceToken }

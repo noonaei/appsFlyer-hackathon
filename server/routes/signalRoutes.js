@@ -11,6 +11,7 @@ const requireAuth = require('../middleware/requireAuth')
 const deviceAuth = require('../middleware/deviceAuth')
 
 router.post('/add',deviceAuth, saveSignals)
+router.post('/batch', deviceAuth, saveSignals); //alias for batch endpoint
 
 // Require auth for all signal routes
 router.use(requireAuth)

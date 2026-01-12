@@ -27,14 +27,12 @@ const eventSignalSchema = new mongoose.Schema({
         required: true
         }],
     timestamp: { type: Date, default: Date.now },//time of the event at the source platform
-    createdAt: {
-        type: Date,
-            expires: 2592000 // 30 days in seconds
-    }
 }, { timestamps: true });
 
 
 eventSignalSchema.index({ deviceId: 1, createdAt: -1 });
+
+eventSignalSchema.index({ createdAt: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 30 });
 
 module.exports = mongoose.model('EventSignal', eventSignalSchema);
 

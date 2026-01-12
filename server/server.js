@@ -6,6 +6,7 @@ const signalRoutes = require('./routes/signalRoutes')
 const parentRoutes = require('./routes/parentRoutes')
 const deviceRoutes = require('./routes/deviceRoutes')
 const aiRouter = require('./routes/ai') //ai side
+const pairingRoutes = require("./routes/pairingRoutes");
 
 
 const app = express()
@@ -21,11 +22,19 @@ app.use((req, res, next) => {
   next()
 })
 
+app.get("/api/config", (req, res) => {
+  const base = `http://localhost:${process.env.PORT || 5000}`;
+  res.json({
+    uploadEndpoint: `${base}/api/signals/add`
+  });
+});
+
 // routes
 app.use('/api/signals', signalRoutes)
 app.use('/api/parents', parentRoutes)
 app.use('/api/devices', deviceRoutes)
 app.use('/api/ai', aiRouter)
+app.use("/api/pairing", pairingRoutes)
 
 
 // connect to db
