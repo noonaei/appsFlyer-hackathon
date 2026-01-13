@@ -7,13 +7,13 @@ const RULES = [
         severity: "high",
         strongKeywords: [
             //english
-            "self harm", "suicide", "kill myself", "kms", "cutting", "thinspo", "pro-ana", "suicidal", "kys", "unalive", "unaliving",
+            "self harm", "suicide", "kill myself", "kms", "cutting", "thinspo", "pro-ana", "suicidal", "kys", "unalive", "unaliving", "weed","joint","smoking", "smoke",
             //hebrew
-            "אובדנות", "אובדני", "אובדנית", "התאבדות", "לפגוע בעצמי", "לחתוך", "פגיעה עצמית", "פרו-אנה", "טינספו" 
+            "אובדנות", "אובדני", "אובדנית", "התאבדות", "לפגוע בעצמי", "לחתוך", "פגיעה עצמית", "פרו-אנה", "טינספו","חרם" ,"חרמות", "רצח" 
         ],
         weakKeywords: [
             //english 
-            "depressed", "depression", "i want to die", "die", "cut", "blood",
+            "depressed", "depression", "i want to die", "die", "cut", "blood","onechipchallenge" ,"onechip", "bedrotting",
 
             //hebrew 
             "דיכאון", "מדוכא", "אני בדיכאון",
@@ -71,8 +71,8 @@ const RULES = [
         ],
         weakKeywords: [
             "kill yourself", 
-            "kys",           
-            "תתאבד", "לך תתאבד"
+            "kys",  "bullying",
+            "תתאבד", "לך תתאבד","חרם", "בריונות"
         ]
     },
 

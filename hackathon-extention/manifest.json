@@ -21,6 +21,8 @@
     "https://www.twitch.tv/*",
     "https://twitch.tv/*",
     "http://localhost/*",
+    "http://127.0.0.1/*"
+
     
   ],
   

@@ -16,14 +16,14 @@ const PlatformEnum = z.enum([
   "instagram",
   "reddit",
   "twitch",
-  "google_search",
 ]);
 
 const SignalKindEnum = z.enum([
   "hashtag",
-  "channel",
-  "search_term",
+  "video_titles",
+  "creators",
   "url_visit",
+  "channel",
 ]);
 
 //redited to match backend schema
@@ -31,8 +31,8 @@ const AggregatedSignalSchema = z.object({
   label: z.string().min(1),
   platform: PlatformEnum,
   kind: SignalKindEnum.optional(),
-  creators: z.array(z.string().min(1)).optional(),
-  occurrenceCount: z.number().int().nonnegative().optional(),
+  //creators: z.array(z.string().min(1)).optional(), //- not needed anymore, keeping just in case
+  occurrenceCount: z.number().int().nonnegative(),
 });
 
 //input can be a single object with history array, or an array of such objects

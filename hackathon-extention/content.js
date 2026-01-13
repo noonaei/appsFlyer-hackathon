@@ -3,7 +3,6 @@
 // ================================
 
 console.log('[EXT] CONTENT SCRIPT LOADED');
-document.body.style.border = '5px solid red';
 
 const KIND_MAP = {
   video_titles: 'video_titles',
@@ -11,7 +10,10 @@ const KIND_MAP = {
   creators: 'creators',
   Creators: 'creators',
   hashtag: 'hashtag',
-  Hashtag: 'hashtag'
+  Hashtag: 'hashtag',
+  Hashtags: 'hashtag',  // plural form
+  SubReddits: 'channel',  // subreddits map to creators kind (will be converted to 'channel' in background)
+  subreddits: 'channel'   // lowercase (if normalized)
 };
 
 
@@ -33,20 +35,38 @@ const signalBatches = {
 // Send batched signals to background every 5 seconds
 setInterval(() => {
   const timestamp = new Date().toISOString();
+  console.log('[EXT] Checking for signals to send...');
 
   for (const [platform, kinds] of Object.entries(signalBatches)) {
     for (const [kind, labelSet] of Object.entries(kinds)) {
       if (!labelSet || labelSet.size === 0) continue;
 
-      chrome.runtime.sendMessage({
-        type: 'signal_batch',
-        payload: {
-          platform,
-          kind,
-          labels: Array.from(labelSet),
-          timestamp
+      console.log(`[EXT] Sending ${labelSet.size} signals for ${platform}/${kind}`);
+
+      try {
+        if (!chrome?.runtime?.sendMessage) {
+          console.warn('[EXT] Chrome runtime not available, skipping signal batch');
+          continue;
         }
-      });
+
+        chrome.runtime.sendMessage({
+          type: 'signal_batch',
+          payload: {
+            platform,
+            kind,
+            labels: Array.from(labelSet),
+            timestamp
+          }
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.warn('[EXT] Message send failed:', chrome.runtime.lastError.message);
+          } else {
+            console.log('[EXT] Signal batch sent successfully:', response);
+          }
+        });
+      } catch (error) {
+        console.warn('[EXT] Error sending signal batch:', error);
+      }
 
       // IMPORTANT: clear only AFTER sending
       labelSet.clear();
@@ -67,6 +87,7 @@ function addSignal(platform, kind, labels) {
   }
 
   const arr = Array.isArray(labels) ? labels : [labels];
+  console.log(`[EXT] Adding ${arr.length} signals for ${platform}/${normalizedKind}:`, arr);
   arr.forEach(l => l && signalBatches[platform][normalizedKind].add(l));
 }
 
@@ -288,16 +309,22 @@ function handleInstagram() {
     let captionText = captionElement.innerText || '';
     const hashtags = extractHashtags(captionText);
     
+    // Extract creator/username from URL or page
+    const urlMatch = location.href.match(/instagram\.com\/([^/]+)/);
+    const creator = urlMatch ? urlMatch[1] : 'instagram';
+    
     if (hashtags.length > 0) {
       console.log('[EXT] Instagram: Found hashtags:', hashtags);
       hashtags.forEach(tag => {
         addSignal('instagram', 'Hashtags', tag);
       });
-      hasScanned = true;
-    } else {
-      console.log('[EXT] Instagram: No hashtags found, retrying...');
-      setTimeout(scanCaption, 500);
     }
+    
+    if (creator && creator !== 'p' && creator !== 'reel') {
+      addSignal('instagram', 'Creators', creator);
+    }
+    
+    hasScanned = true;
   };
 
   setTimeout(scanCaption, 1000);
@@ -331,7 +358,7 @@ function handleTikTok() {
         
         const percentWatched = videoElement.currentTime / videoDuration;
         
-        if (percentWatched >= 0.8) {
+        if (percentWatched >= 0.5) {
           let captionContainer = videoElement.parentElement;
           for (let i = 0; i < 3; i++) {
             captionContainer = captionContainer?.parentElement;
@@ -340,12 +367,20 @@ function handleTikTok() {
           if (captionContainer) {
             const fullText = captionContainer.innerText || '';
             const hashtags = extractHashtags(fullText);
+            
+            // Extract creator from TikTok URL
+            const urlMatch = location.href.match(/tiktok\.com\/@([^/]+)/);
+            const creator = urlMatch ? urlMatch[1] : 'tiktok';
 
             if (hashtags.length > 0) {
               console.log('[EXT] TikTok: Found hashtags:', hashtags);
               hashtags.forEach(tag => {
                 addSignal('tiktok', 'Hashtags', tag);
               });
+            }
+            
+            if (creator) {
+              addSignal('tiktok', 'Creators', creator);
             }
           }
 

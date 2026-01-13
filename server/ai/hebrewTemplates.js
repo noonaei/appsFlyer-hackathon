@@ -1,7 +1,87 @@
+const { generateSummaryLLM } = require("./llm");
 
+// AI-powered explanation functions with fallback to templates
+async function explainTopicHe(topicRaw) {
+  try {
+    const prompt = [
+      `Explain in Hebrew what "${topicRaw}" means in online/social media context.`,
+      "Write 2-3 sentences explaining what this topic/hashtag/content typically involves.",
+      "Be informative and age-appropriate. Focus on what parents should know.",
+      "Return ONLY the Hebrew explanation text, no JSON or extra formatting."
+    ].join(" ");
+    
+    const aiResponse = await generateSummaryLLM({
+      facts: { topic: topicRaw },
+      outputSchemaHint: "Hebrew explanation text",
+      customPrompt: prompt
+    });
+    
+    if (aiResponse && typeof aiResponse === 'string' && aiResponse.length > 20) {
+      return aiResponse;
+    }
+  } catch (err) {
+    console.error(`[AI] Error explaining topic ${topicRaw}:`, err);
+  }
+  
+  // Fallback to template
+  return explainTopicHeTemplate(topicRaw);
+}
 
+async function explainAlertHe(category, severity) {
+  try {
+    const prompt = [
+      `Explain in Hebrew why content category "${category}" with "${severity}" severity is concerning for parents.`,
+      "Write 3-4 sentences explaining the specific risks and concerns.",
+      "Be informative but not alarmist. Address parents directly using 'אתם'.",
+      "Return ONLY the Hebrew explanation text, no JSON or extra formatting."
+    ].join(" ");
+    
+    const aiResponse = await generateSummaryLLM({
+      facts: { category, severity },
+      outputSchemaHint: "Hebrew explanation text",
+      customPrompt: prompt
+    });
+    
+    if (aiResponse && typeof aiResponse === 'string' && aiResponse.length > 30) {
+      return aiResponse;
+    }
+  } catch (err) {
+    console.error(`[AI] Error explaining alert ${category}:`, err);
+  }
+  
+  // Fallback to template
+  return explainAlertHeTemplate(category, severity);
+}
 
-function explainTopicHe(topicRaw) {
+async function suggestedActionHe(severity) {
+  try {
+    const prompt = [
+      `Provide Hebrew suggested actions for parents when finding "${severity}" severity concerning content.`,
+      "Write 2-3 sentences with specific, actionable steps parents can take.",
+      "Include conversation starters and monitoring suggestions.",
+      "Address parents directly using 'אתם'. Be constructive and supportive.",
+      "Return ONLY the Hebrew action text, no JSON or extra formatting."
+    ].join(" ");
+    
+    const aiResponse = await generateSummaryLLM({
+      facts: { severity },
+      outputSchemaHint: "Hebrew action text",
+      customPrompt: prompt
+    });
+    
+    if (aiResponse && typeof aiResponse === 'string' && aiResponse.length > 30) {
+      return aiResponse;
+    }
+  } catch (err) {
+    console.error(`[AI] Error generating suggested action for ${severity}:`, err);
+  }
+  
+  // Fallback to template
+  return suggestedActionHeTemplate(severity);
+}
+
+// Template fallback functions
+function explainTopicHeTemplate(topicRaw) {
   const topic = (topicRaw || "").toLowerCase();
 
   if (topic.includes("minecraft") || topic.includes("#minecraft")) {
@@ -26,7 +106,7 @@ function explainTopicHe(topicRaw) {
 
 
 
-function explainAlertHe(category, severity) {
+function explainAlertHeTemplate(category, severity) {
   //messages according to category
   if (category === "self_harm") {
     return "ייתכן שזה קשור למצוקה או פגיעה עצמית. חשוב לבדוק הקשר ולא להסיק מסקנות רק מהמונח.";
@@ -54,7 +134,7 @@ function explainAlertHe(category, severity) {
 }
 
 
-function suggestedActionHe(severity) {
+function suggestedActionHeTemplate(severity) {
   if (severity === "high") {
     return "שיחה רגועה ושואלת, ובדיקה משותפת של התוכן/המקור. אם יש חשש ממשי — פנייה לגורם מקצועי.";
   }
